@@ -1,4 +1,4 @@
-import { Router, type Request, type Response, type NextFunction } from 'express';
+import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { deploymentService } from '../services/deployment.service.js';
 

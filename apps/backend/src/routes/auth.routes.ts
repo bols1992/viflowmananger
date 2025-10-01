@@ -1,4 +1,4 @@
-import { Router, type Request, type Response, type NextFunction } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
 import { authService } from '../services/auth.service.js';
 import { authenticate } from '../middleware/auth.js';
