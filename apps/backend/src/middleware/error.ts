@@ -48,9 +48,19 @@ export function errorHandler(
   }
 
   // Unknown errors
-  logger.error({ error: err, path: req.path }, 'Unexpected error');
+  logger.error({
+    error: err,
+    message: err.message,
+    stack: err.stack,
+    path: req.path
+  }, 'Unexpected error');
+
   return res.status(500).json({
     error: 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && {
+      details: err.message,
+      stack: err.stack
+    })
   });
 }
 

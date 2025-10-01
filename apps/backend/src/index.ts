@@ -15,6 +15,9 @@ import deploymentRoutes from './routes/deployment.routes.js';
 
 const app = express();
 
+// Trust proxy (needed for rate limiting behind nginx/reverse proxy)
+app.set('trust proxy', 1);
+
 // SECURITY: Helmet for security headers
 app.use(helmet());
 
