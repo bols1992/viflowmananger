@@ -1,24 +1,25 @@
 import { PrismaClient } from '@prisma/client';
+import { pbkdf2Sync } from 'crypto';
 
 const prisma = new PrismaClient();
 
-// Try argon2 first, fallback to bcrypt
-async function hashPassword(password: string): Promise<string> {
-  try {
-    const argon2 = await import('argon2');
-    return argon2.hash(password);
-  } catch {
-    console.warn('⚠️  Using bcrypt instead of argon2');
-    const bcrypt = await import('bcrypt');
-    return bcrypt.hash(password, 12);
-  }
+// pbkdf2 hash (no native modules required)
+function hashPassword(password: string): string {
+  const salt = 'viflow-v1';
+  const iterations = 100000;
+  const keylen = 64;
+  const digest = 'sha512';
+
+  const hash = pbkdf2Sync(password, salt, iterations, keylen, digest);
+  return `pbkdf2$${hash.toString('hex')}`;
 }
 
 async function main() {
   const adminUsername = process.env.SEED_ADMIN_USERNAME || 'admin';
   const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'admin123!';
 
-  const passwordHash = await hashPassword(adminPassword);
+  console.log('🔐 Using pbkdf2 (100k iterations, SHA-512) for password hashing');
+  const passwordHash = hashPassword(adminPassword);
 
   const admin = await prisma.user.upsert({
     where: { username: adminUsername },
