@@ -38,7 +38,7 @@ app.use(
 // SECURITY: Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 1000, // Limit each IP to 1000 requests per windowMs (relaxed for development)
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -47,7 +47,7 @@ app.use('/api/', limiter);
 // Stricter rate limit for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5, // 5 login attempts per 15 minutes
+  max: 50, // 50 login attempts per 15 minutes (relaxed for testing)
   skipSuccessfulRequests: true,
 });
 app.use('/api/auth/login', authLimiter);
