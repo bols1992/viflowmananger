@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Redis for BullMQ job queue
+  redis:
+    image: redis:7-alpine
+    container_name: viflow-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Backend service (development)
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: viflow-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_URL=${DATABASE_URL:-file:/data/viflow.db}
+      - REDIS_URL=redis://redis:6379
+      - UPLOAD_DIR=/uploads
+      - DEPLOY_ROOT=/var/www/viflow
+      - SCRIPTS_DIR=/opt/viflow/ops/scripts
+      - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-2147483648}
+      - BASIC_AUTH_DEFAULT_USER=${BASIC_AUTH_DEFAULT_USER:-viewer}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@example.com}
+    volumes:
+      - ./apps/backend/prisma:/app/prisma
+      - backend-data:/data
+      - uploads:/uploads
+      - ./ops:/opt/viflow/ops:ro
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis-data:
+  backend-data:
+  uploads:

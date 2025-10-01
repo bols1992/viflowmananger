@@ -1,0 +1,51 @@
+# Sudoers configuration for ViFlow deployment
+#
+# Installation:
+#   sudo visudo -f /etc/sudoers.d/viflow-deployer
+#
+# This allows the 'viflowapp' user to execute specific deployment scripts
+# and system commands required for ViFlow site deployment without password.
+#
+# SECURITY: Only whitelisted scripts and commands are allowed.
+
+# Command aliases for clarity
+Cmnd_Alias VIFLOW_SCRIPTS = /opt/viflow/ops/scripts/deploy_site.sh, \
+                             /opt/viflow/ops/scripts/nginx_site.sh, \
+                             /opt/viflow/ops/scripts/systemd_service.sh
+
+Cmnd_Alias NGINX_CMDS = /usr/bin/nginx, \
+                         /usr/sbin/nginx
+
+Cmnd_Alias SYSTEMCTL_CMDS = /usr/bin/systemctl reload nginx, \
+                             /usr/bin/systemctl daemon-reload, \
+                             /usr/bin/systemctl enable viflow-*, \
+                             /usr/bin/systemctl restart viflow-*, \
+                             /usr/bin/systemctl start viflow-*, \
+                             /usr/bin/systemctl stop viflow-*, \
+                             /usr/bin/systemctl status viflow-*, \
+                             /usr/bin/systemctl is-active viflow-*
+
+Cmnd_Alias CERTBOT_CMDS = /usr/bin/certbot
+
+# File system commands (restricted to ViFlow directories)
+Cmnd_Alias FILE_CMDS = /usr/bin/htpasswd, \
+                        /bin/mkdir, \
+                        /bin/chown, \
+                        /bin/chmod, \
+                        /bin/mv, \
+                        /bin/cp, \
+                        /bin/ln, \
+                        /bin/rm
+
+# Package management (for installing dependencies)
+Cmnd_Alias APT_CMDS = /usr/bin/apt-get update, \
+                       /usr/bin/apt-get install -y -qq unzip, \
+                       /usr/bin/apt-get install -y -qq apache2-utils, \
+                       /usr/bin/apt-get install -y certbot python3-certbot-nginx
+
+# Grant permissions to viflowapp user
+viflowapp ALL=(root) NOPASSWD: VIFLOW_SCRIPTS, NGINX_CMDS, SYSTEMCTL_CMDS, CERTBOT_CMDS, FILE_CMDS, APT_CMDS
+
+# Optional: Add more restrictive defaults
+Defaults:viflowapp !lecture
+Defaults:viflowapp log_output

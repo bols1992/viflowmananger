@@ -1,0 +1,59 @@
+// Prisma Schema für ViFlow Manager
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  // Für PostgreSQL: provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  role         UserRole @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model Site {
+  id               String       @id @default(uuid())
+  name             String
+  domain           String       @unique
+  slug             String       @unique
+  description      String?
+  basicAuthUser    String
+  basicAuthHash    String
+  basicAuthEnabled Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  deployments      Deployment[]
+}
+
+model Deployment {
+  id         String           @id @default(uuid())
+  siteId     String
+  site       Site             @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  status     DeploymentStatus @default(QUEUED)
+  message    String?
+  log        String?          @default("")
+  createdAt  DateTime         @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  @@index([siteId])
+}
+
+enum DeploymentStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+}
