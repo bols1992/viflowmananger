@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { deploymentService } from '../services/deployment.service.js';
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * GET /api/deployments

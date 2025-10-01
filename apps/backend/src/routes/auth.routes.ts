@@ -1,10 +1,10 @@
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { z } from 'zod';
 import { authService } from '../services/auth.service.js';
 import { authenticate } from '../middleware/auth.js';
 import { config } from '../config.js';
 
-const router = Router();
+const router: Router = Router();
 
 const loginSchema = z.object({
   username: z.string().min(3).max(50),

@@ -6,7 +6,7 @@
  * pbkdf2 is built-in fallback for initial deployment
  */
 
-import { createHash, pbkdf2Sync, timingSafeEqual } from 'crypto';
+import { pbkdf2Sync, timingSafeEqual } from 'crypto';
 
 let useArgon2 = false;
 let useBcrypt = false;

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
 import path from 'path';
@@ -12,7 +12,7 @@ import { logger } from '../logger.js';
 import { prisma } from '../db.js';
 import { deployQueue } from '../queue/deploy.queue.js';
 
-const router = Router();
+const router: Router = Router();
 
 // Configure multer for file uploads
 const upload = multer({
