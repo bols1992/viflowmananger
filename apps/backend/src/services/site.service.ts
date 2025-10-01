@@ -1,10 +1,10 @@
-import argon2 from 'argon2';
 import { prisma } from '../db.js';
 import { AppError } from '../middleware/error.js';
 import { generateSlug, isValidSlug } from '../utils/slug.js';
 import { isValidDomain } from '../utils/domain.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
+import { hashPassword } from '../utils/password.js';
 
 export interface CreateSiteDto {
   name: string;
@@ -49,8 +49,8 @@ export class SiteService {
     }
     slug = uniqueSlug;
 
-    // Hash basic auth password using argon2
-    const basicAuthHash = await argon2.hash(dto.basicAuthPassword);
+    // Hash basic auth password
+    const basicAuthHash = await hashPassword(dto.basicAuthPassword);
 
     const site = await prisma.site.create({
       data: {

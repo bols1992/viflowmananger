@@ -1,8 +1,8 @@
-import argon2 from 'argon2';
 import { prisma } from '../db.js';
 import { AppError } from '../middleware/error.js';
 import { signToken } from '../utils/jwt.js';
 import { logger } from '../logger.js';
+import { verifyPassword } from '../utils/password.js';
 
 export class AuthService {
   /**
@@ -18,8 +18,8 @@ export class AuthService {
       throw new AppError(401, 'Invalid credentials');
     }
 
-    // Verify password using argon2
-    const valid = await argon2.verify(user.passwordHash, password);
+    // Verify password (supports both argon2 and bcrypt)
+    const valid = await verifyPassword(user.passwordHash, password);
 
     if (!valid) {
       logger.warn({ username }, 'Login attempt with invalid password');

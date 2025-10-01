@@ -1,13 +1,24 @@
 import { PrismaClient } from '@prisma/client';
-import argon2 from 'argon2';
 
 const prisma = new PrismaClient();
+
+// Try argon2 first, fallback to bcrypt
+async function hashPassword(password: string): Promise<string> {
+  try {
+    const argon2 = await import('argon2');
+    return argon2.hash(password);
+  } catch {
+    console.warn('⚠️  Using bcrypt instead of argon2');
+    const bcrypt = await import('bcrypt');
+    return bcrypt.hash(password, 12);
+  }
+}
 
 async function main() {
   const adminUsername = process.env.SEED_ADMIN_USERNAME || 'admin';
   const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'admin123!';
 
-  const passwordHash = await argon2.hash(adminPassword);
+  const passwordHash = await hashPassword(adminPassword);
 
   const admin = await prisma.user.upsert({
     where: { username: adminUsername },
