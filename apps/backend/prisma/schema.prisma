@@ -13,14 +13,9 @@ model User {
   id           String   @id @default(uuid())
   username     String   @unique
   passwordHash String
-  role         UserRole @default(USER)
+  role         String   @default("USER") // "ADMIN" | "USER"
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-}
-
-enum UserRole {
-  ADMIN
-  USER
 }
 
 model Site {
@@ -38,22 +33,15 @@ model Site {
 }
 
 model Deployment {
-  id         String           @id @default(uuid())
+  id         String   @id @default(uuid())
   siteId     String
-  site       Site             @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  status     DeploymentStatus @default(QUEUED)
+  site       Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  status     String   @default("QUEUED") // "QUEUED" | "RUNNING" | "SUCCESS" | "FAILED"
   message    String?
-  log        String?          @default("")
-  createdAt  DateTime         @default(now())
+  log        String?  @default("")
+  createdAt  DateTime @default(now())
   startedAt  DateTime?
   finishedAt DateTime?
 
   @@index([siteId])
-}
-
-enum DeploymentStatus {
-  QUEUED
-  RUNNING
-  SUCCESS
-  FAILED
 }

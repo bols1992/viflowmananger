@@ -15,7 +15,7 @@ async function main() {
     create: {
       username: adminUsername,
       passwordHash,
-      role: 'ADMIN',
+      role: 'ADMIN', // String literal statt Enum
     },
   });
 

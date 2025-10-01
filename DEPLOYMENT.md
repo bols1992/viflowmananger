@@ -182,11 +182,11 @@ chmod 600 .env
 pnpm install
 
 # Prisma
-pnpm --filter backend prisma generate
-pnpm --filter backend prisma migrate deploy
+pnpm --filter backend prisma:generate
+pnpm --filter backend prisma:migrate
 
 # Admin-User erstellen
-pnpm --filter backend prisma db seed
+pnpm --filter backend prisma:seed
 
 # Build
 pnpm -r build

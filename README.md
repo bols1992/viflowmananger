@@ -151,13 +151,13 @@ nano .env
 pnpm install
 
 # Prisma Client generieren
-pnpm --filter backend prisma generate
+pnpm --filter backend prisma:generate
 
 # Datenbank migrieren
-pnpm --filter backend prisma migrate deploy
+pnpm --filter backend prisma:migrate
 
 # Admin-User erstellen (Passwort aus .env)
-pnpm --filter backend prisma db seed
+pnpm --filter backend prisma:seed
 
 # Anwendung bauen
 pnpm -r build
