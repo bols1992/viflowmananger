@@ -7,6 +7,7 @@ export interface Site {
   slug: string;
   description?: string;
   basicAuthUser: string;
+  basicAuthPassword?: string;
   basicAuthEnabled: boolean;
   viflowVersion?: string;
   containerName?: string;
