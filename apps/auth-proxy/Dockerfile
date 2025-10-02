@@ -11,6 +11,9 @@ RUN npm install --production
 # Copy application
 COPY src ./src
 
+# Copy logo
+COPY logo.png ./logo.png
+
 # Expose port
 EXPOSE 3000
 
