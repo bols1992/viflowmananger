@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -14,29 +15,53 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             ViFlow Manager
           </Link>
 
           {user && (
-            <div className="flex items-center gap-4">
-              <button
-                onClick={toggleTheme}
-                className="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded dark:text-white"
-                title="Theme umschalten"
-              >
-                {theme === 'light' ? '🌙' : '☀️'}
-              </button>
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                {user.username} ({user.role})
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <button
+                  onClick={() => setShowThemeMenu(!showThemeMenu)}
+                  className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  title="Theme"
+                >
+                  {theme === 'system' ? '🖥️' : theme === 'light' ? '☀️' : '🌙'}
+                </button>
+                {showThemeMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                    <button
+                      onClick={() => { setTheme('light'); setShowThemeMenu(false); }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      ☀️ Hell
+                    </button>
+                    <button
+                      onClick={() => { setTheme('dark'); setShowThemeMenu(false); }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      🌙 Dunkel
+                    </button>
+                    <button
+                      onClick={() => { setTheme('system'); setShowThemeMenu(false); }}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      🖥️ System
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg">
+                {user.username} <span className="text-gray-400">({user.role})</span>
+              </div>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded dark:text-white"
+                className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-sm"
               >
                 Logout
               </button>
@@ -51,7 +76,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-100 dark:bg-gray-800 py-6">
+      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -59,21 +84,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex flex-col items-center md:items-end gap-2">
               <div className="text-sm text-gray-600 dark:text-gray-400">
-                Erstellt von{' '}
+                Entwickelt von{' '}
                 <a
                   href="https://proht.de"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-semibold transition-colors"
                 >
                   pro-HT
                 </a>
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-500">
-                Kontakt:{' '}
                 <a
                   href="mailto:info@proht.de"
-                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                  className="text-blue-600 dark:text-blue-400 hover:underline transition-colors"
                 >
                   info@proht.de
                 </a>

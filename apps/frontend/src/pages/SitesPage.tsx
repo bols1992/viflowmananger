@@ -39,13 +39,13 @@ export function SitesPage() {
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Webseiten</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Webseiten</h1>
           {isAdmin && (
             <Link
               to="/sites/new"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
             >
-              Neue Webseite
+              + Neue Webseite
             </Link>
           )}
         </div>
@@ -75,37 +75,20 @@ export function SitesPage() {
               <Link
                 key={site.id}
                 to={`/sites/${site.id}`}
-                className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow"
+                className="group block p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 transform hover:-translate-y-1"
               >
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{site.name}</h3>
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{site.domain}</p>
-                {site.description && (
-                  <p className="mt-2 text-sm text-gray-500">{site.description}</p>
-                )}
-                <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
-                  <span>Slug: {site.slug}</span>
-                  <span>{site._count?.deployments || 0} Deployments</span>
-                </div>
-                <div className="mt-2 flex gap-2 text-xs flex-wrap">
-                  {site.basicAuthEnabled ? (
-                    <span className="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-800">
-                      Basic Auth aktiv
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2 py-1 rounded bg-gray-100 text-gray-800">
-                      Basic Auth deaktiviert
-                    </span>
-                  )}
+                <div className="flex items-start justify-between">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{site.name}</h3>
                   {site.containerStatus && (
                     <span
-                      className={`inline-flex items-center px-2 py-1 rounded ${
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                         site.containerStatus === 'running'
-                          ? 'bg-green-100 text-green-800'
+                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                           : site.containerStatus === 'stopped'
-                          ? 'bg-gray-100 text-gray-800'
+                          ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                           : site.containerStatus === 'building'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                          : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
                       }`}
                     >
                       {site.containerStatus === 'running' && '● Running'}
@@ -114,6 +97,20 @@ export function SitesPage() {
                       {site.containerStatus === 'error' && '✕ Error'}
                     </span>
                   )}
+                </div>
+                <p className="mt-3 text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1">
+                  🌐 {site.domain}
+                </p>
+                {site.description && (
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{site.description}</p>
+                )}
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span className="flex items-center gap-1">
+                    📦 {site.slug}
+                  </span>
+                  <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                    🚀 {site._count?.deployments || 0}
+                  </span>
                 </div>
               </Link>
             ))}
