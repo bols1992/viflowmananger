@@ -119,33 +119,35 @@ export function SiteDetailPage() {
     <Layout>
       <div className="space-y-6">
         <div>
-          <button onClick={() => navigate('/')} className="text-blue-600 hover:underline mb-4">
+          <button onClick={() => navigate('/')} className="text-blue-600 dark:text-blue-400 hover:underline mb-4 font-medium transition-colors">
             ← Zurück zur Übersicht
           </button>
-          <h1 className="text-3xl font-bold">{site.name}</h1>
-          <p className="text-gray-600 mt-2">{site.domain}</p>
-          {site.description && <p className="text-gray-500 mt-1">{site.description}</p>}
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{site.name}</h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-2 flex items-center gap-2">
+            <span>🌐</span> {site.domain}
+          </p>
+          {site.description && <p className="text-gray-500 dark:text-gray-400 mt-1">{site.description}</p>}
         </div>
 
-        {error && <div className="bg-red-50 text-red-800 p-4 rounded">{error}</div>}
+        {error && <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-300 p-4 rounded">{error}</div>}
 
         {/* Container Status & Controls */}
         {site.containerName && (
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Container Status</h2>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Container Status</h2>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Status:</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status:</span>
                 <span
                   className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
                     site.containerStatus === 'running'
-                      ? 'bg-green-100 text-green-800'
+                      ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                       : site.containerStatus === 'stopped'
-                      ? 'bg-gray-100 text-gray-800'
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                       : site.containerStatus === 'building'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-red-100 text-red-800'
+                      ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                      : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
                   }`}
                 >
                   {site.containerStatus === 'running' && '● Running'}
@@ -156,24 +158,24 @@ export function SiteDetailPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">ViFlow Version:</span>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">ViFlow Version:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   {site.viflowVersion === '7' ? 'ViFlow 7 (.NET Core 3.1)' : 'ViFlow 8 (.NET Core 8)'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Port:</span>
-                <span className="text-sm text-gray-600">{site.containerPort}</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Port:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">{site.containerPort}</span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">URL:</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">URL:</span>
                 <a
                   href={`http://${site.domain}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-blue-600 hover:underline"
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline transition-colors"
                 >
                   {site.domain}
                 </a>
@@ -184,7 +186,7 @@ export function SiteDetailPage() {
                   {site.containerStatus === 'running' && (
                     <button
                       onClick={handleStop}
-                      className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                      className="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-semibold"
                     >
                       Container stoppen
                     </button>
@@ -192,7 +194,7 @@ export function SiteDetailPage() {
                   {site.containerStatus === 'stopped' && (
                     <button
                       onClick={handleStart}
-                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-semibold"
                     >
                       Container starten
                     </button>
@@ -204,14 +206,14 @@ export function SiteDetailPage() {
         )}
 
         {isAdmin && (
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4 text-red-600">Gefahrenzone</h2>
-            <p className="text-sm text-gray-600 mb-4">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-red-300 dark:border-red-700">
+            <h2 className="text-xl font-semibold mb-4 text-red-600 dark:text-red-400">⚠️ Gefahrenzone</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Das Löschen dieser Seite ist permanent und kann nicht rückgängig gemacht werden.
             </p>
             <button
               onClick={handleDelete}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-semibold"
             >
               Seite löschen
             </button>
@@ -219,13 +221,13 @@ export function SiteDetailPage() {
         )}
 
         {isAdmin && (
-          <div className="bg-white p-6 rounded-lg shadow space-y-4">
-            <h2 className="text-xl font-semibold">
-              {site.containerName ? 'Neues Deployment' : 'Upload & Deployment'}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {site.containerName ? '🚀 Neues Deployment' : '📦 Upload & Deployment'}
             </h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 ZIP-Datei auswählen
               </label>
               <input
@@ -235,7 +237,7 @@ export function SiteDetailPage() {
                   setUploadFile(e.target.files?.[0] || null);
                   setUploadProgress(0);
                 }}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-blue-50 file:to-indigo-50 dark:file:from-blue-900 dark:file:to-indigo-900 file:text-blue-700 dark:file:text-blue-200 hover:file:from-blue-100 hover:file:to-indigo-100 dark:hover:file:from-blue-800 dark:hover:file:to-indigo-800 file:transition-all file:cursor-pointer"
               />
             </div>
 
@@ -243,7 +245,7 @@ export function SiteDetailPage() {
               <button
                 onClick={handleUpload}
                 disabled={uploading}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center gap-2 font-semibold"
               >
                 {uploading && uploadProgress < 100 && `Hochladen... ${Math.round(uploadProgress)}%`}
                 {uploading && uploadProgress === 100 && (
@@ -261,46 +263,46 @@ export function SiteDetailPage() {
           </div>
         )}
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Deployment Historie</h2>
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">📜 Deployment Historie</h2>
 
           {deployments.length === 0 ? (
-            <p className="text-gray-500">Noch keine Deployments</p>
+            <p className="text-gray-500 dark:text-gray-400">Noch keine Deployments</p>
           ) : (
             <div className="space-y-3">
               {deployments.map((deployment) => (
                 <div
                   key={deployment.id}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded"
+                  className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900 hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
                 >
                   <div>
                     <div className="flex items-center gap-2">
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-semibold rounded ${
                           deployment.status === 'SUCCESS'
-                            ? 'bg-green-100 text-green-800'
+                            ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                             : deployment.status === 'FAILED'
-                            ? 'bg-red-100 text-red-800'
+                            ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
                             : deployment.status === 'RUNNING'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                         }`}
                       >
                         {deployment.status}
                       </span>
                       {deployment.message && (
-                        <span className="text-sm text-gray-600">{deployment.message}</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{deployment.message}</span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {new Date(deployment.createdAt).toLocaleString('de-DE')}
                     </p>
                   </div>
                   <button
                     onClick={() => navigate(`/deployments/${deployment.id}`)}
-                    className="text-sm text-blue-600 hover:underline"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium transition-colors"
                   >
-                    Logs
+                    Logs →
                   </button>
                 </div>
               ))}
