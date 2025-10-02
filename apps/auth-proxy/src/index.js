@@ -111,7 +111,7 @@ app.get('/login', (req, res) => {
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     .logo-img {
-      max-width: 180px;
+      max-width: 80px;
       height: auto;
       margin-bottom: 16px;
       filter: brightness(0) invert(1);

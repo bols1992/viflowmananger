@@ -41,6 +41,7 @@ export function LoginPage() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-center">
+            <img src="/logo_proht_hell.png" alt="pro-HT Logo" className="mx-auto mb-4 h-12 brightness-0 invert" />
             <h2 className="text-3xl font-bold text-white mb-2">ViFlow Manager</h2>
             <p className="text-blue-100">Admin Login</p>
           </div>

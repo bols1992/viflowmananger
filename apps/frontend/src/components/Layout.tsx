@@ -19,8 +19,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            ViFlow Manager
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/logo_proht_hell.png" alt="pro-HT Logo" className="h-8 dark:brightness-0 dark:invert" />
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              ViFlow Manager
+            </span>
           </Link>
 
           {user && (
