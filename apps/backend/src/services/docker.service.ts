@@ -419,6 +419,51 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   }
 
   /**
+   * Sync container status from Docker to database on startup
+   */
+  static async syncContainerStatus(): Promise<void> {
+    try {
+      logger.info('Syncing container status from Docker...');
+      const { stdout } = await execAsync(`${this.DOCKER_CMD} ps -a --filter "name=viflow-site-" --format "{{.Names}}\t{{.Status}}"`);
+
+      if (!stdout.trim()) {
+        logger.info('No ViFlow containers found');
+        return;
+      }
+
+      const containers = stdout.trim().split('\n');
+      const prisma = (await import('../db.js')).prisma;
+
+      for (const line of containers) {
+        const [containerName, statusText] = line.split('\t');
+        const siteId = containerName.replace('viflow-site-', '');
+
+        // Determine status from Docker status text
+        let status: 'running' | 'stopped' | 'error' = 'stopped';
+        if (statusText.toLowerCase().includes('up')) {
+          status = 'running';
+        } else if (statusText.toLowerCase().includes('exited') || statusText.toLowerCase().includes('created')) {
+          status = 'stopped';
+        }
+
+        // Update database
+        await prisma.site.update({
+          where: { id: siteId },
+          data: { containerStatus: status },
+        }).catch((err) => {
+          logger.warn(`Could not update status for site ${siteId}:`, err.message);
+        });
+
+        logger.info(`Synced ${containerName}: ${status}`);
+      }
+
+      logger.info('Container status sync completed');
+    } catch (error: any) {
+      logger.error('Failed to sync container status:', error.message);
+    }
+  }
+
+  /**
    * Complete cleanup of a site's Docker resources
    */
   static async cleanup(siteId: string, domain: string, deleteUploadDir = true): Promise<void> {

@@ -51,11 +51,14 @@ export function SiteDetailPage() {
       await sitesApi.upload(id, uploadFile, setUploadProgress);
       setUploadSuccess(true);
       setUploadProgress(100);
+      // Keep uploading state for spinner after 100%
       // Reload site data to get new container status
-      setTimeout(() => loadData(), 2000);
+      setTimeout(async () => {
+        await loadData();
+        setUploading(false);
+      }, 3000);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Upload fehlgeschlagen');
-    } finally {
       setUploading(false);
     }
   };
@@ -79,6 +82,20 @@ export function SiteDetailPage() {
       await loadData();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Container konnte nicht gestoppt werden');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    if (!confirm(`Möchten Sie die Seite "${site?.name}" wirklich löschen? Dies kann nicht rückgängig gemacht werden.`)) {
+      return;
+    }
+    try {
+      setError('');
+      await sitesApi.delete(id);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler beim Löschen');
     }
   };
 
@@ -189,6 +206,21 @@ export function SiteDetailPage() {
         )}
 
         {isAdmin && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold mb-4 text-red-600">Gefahrenzone</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Das Löschen dieser Seite ist permanent und kann nicht rückgängig gemacht werden.
+            </p>
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Seite löschen
+            </button>
+          </div>
+        )}
+
+        {isAdmin && (
           <div className="bg-white p-6 rounded-lg shadow space-y-4">
             <h2 className="text-xl font-semibold">
               {site.containerName ? 'Neues Deployment' : 'Upload & Deployment'}
@@ -210,20 +242,24 @@ export function SiteDetailPage() {
               />
             </div>
 
-            {uploadFile && !uploadSuccess && (
+            {uploadFile && (
               <button
                 onClick={handleUpload}
                 disabled={uploading}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {uploading ? `Deploying... ${Math.round(uploadProgress)}%` : 'Hochladen & Deployen'}
+                {uploading && uploadProgress < 100 && `Hochladen... ${Math.round(uploadProgress)}%`}
+                {uploading && uploadProgress === 100 && (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Container wird gebaut und gestartet...</span>
+                  </>
+                )}
+                {!uploading && 'Hochladen & Deployen'}
               </button>
-            )}
-
-            {uploadSuccess && (
-              <div className="bg-green-50 text-green-800 p-3 rounded">
-                Upload und Deployment erfolgreich! Container wird gestartet...
-              </div>
             )}
           </div>
         )}

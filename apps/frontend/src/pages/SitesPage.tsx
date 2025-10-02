@@ -9,6 +9,7 @@ export function SitesPage() {
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadSites();
@@ -28,6 +29,12 @@ export function SitesPage() {
 
   const isAdmin = user?.role === 'ADMIN';
 
+  const filteredSites = sites.filter((site) =>
+    site.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    site.domain.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    site.slug.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -43,25 +50,35 @@ export function SitesPage() {
           )}
         </div>
 
-        {error && <div className="bg-red-50 text-red-800 p-4 rounded">{error}</div>}
+        <div>
+          <input
+            type="text"
+            placeholder="Seiten durchsuchen..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {error && <div className="bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 p-4 rounded">{error}</div>}
 
         {loading ? (
           <div className="text-center py-12">Lädt...</div>
-        ) : sites.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            Keine Webseiten vorhanden.
-            {isAdmin && ' Erstellen Sie die erste Webseite.'}
+        ) : filteredSites.length === 0 ? (
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+            {searchQuery ? 'Keine passenden Seiten gefunden.' : 'Keine Webseiten vorhanden.'}
+            {!searchQuery && isAdmin && ' Erstellen Sie die erste Webseite.'}
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {sites.map((site) => (
+            {filteredSites.map((site) => (
               <Link
                 key={site.id}
                 to={`/sites/${site.id}`}
-                className="block p-6 bg-white rounded-lg shadow hover:shadow-lg transition-shadow"
+                className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow"
               >
-                <h3 className="text-xl font-semibold text-gray-900">{site.name}</h3>
-                <p className="mt-2 text-sm text-gray-600">{site.domain}</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{site.name}</h3>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">{site.domain}</p>
                 {site.description && (
                   <p className="mt-2 text-sm text-gray-500">{site.description}</p>
                 )}

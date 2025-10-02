@@ -8,7 +8,10 @@ import { sitesApi } from '../api/sites';
 
 const createSiteSchema = z.object({
   name: z.string().min(1, 'Name ist erforderlich').max(100),
-  domain: z.string().min(3, 'Domain ist erforderlich').max(253),
+  subdomain: z.string()
+    .min(1, 'Subdomain ist erforderlich')
+    .max(63)
+    .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Nur Kleinbuchstaben, Zahlen und Bindestriche'),
   description: z.string().max(500).optional(),
   basicAuthPassword: z.string().min(8, 'Mindestens 8 Zeichen').max(100),
   basicAuthEnabled: z.boolean().default(true),
@@ -34,7 +37,15 @@ export function CreateSitePage() {
   const onSubmit = async (data: CreateSiteForm) => {
     try {
       setError('');
-      const site = await sitesApi.create(data);
+      // Combine subdomain with base domain
+      const fullDomain = `${data.subdomain}.pm-iwt.de`;
+      const site = await sitesApi.create({
+        name: data.name,
+        domain: fullDomain,
+        description: data.description,
+        basicAuthPassword: data.basicAuthPassword,
+        basicAuthEnabled: data.basicAuthEnabled,
+      });
       navigate(`/sites/${site.id}`);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Erstellen der Seite');
@@ -66,19 +77,27 @@ export function CreateSitePage() {
           </div>
 
           <div>
-            <label htmlFor="domain" className="block text-sm font-medium text-gray-700">
-              Domain *
+            <label htmlFor="subdomain" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Subdomain *
             </label>
-            <input
-              id="domain"
-              type="text"
-              {...register('domain')}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="example.com"
-            />
-            {errors.domain && (
-              <p className="mt-1 text-sm text-red-600">{errors.domain.message}</p>
+            <div className="mt-1 flex rounded-md shadow-sm">
+              <input
+                id="subdomain"
+                type="text"
+                {...register('subdomain')}
+                className="flex-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-md bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="meine-seite"
+              />
+              <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
+                .pm-iwt.de
+              </span>
+            </div>
+            {errors.subdomain && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.subdomain.message}</p>
             )}
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Nur Kleinbuchstaben, Zahlen und Bindestriche erlaubt
+            </p>
           </div>
 
           <div>

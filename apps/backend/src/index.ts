@@ -12,6 +12,7 @@ import { createDeployWorker } from './queue/deploy.worker.js';
 import authRoutes from './routes/auth.routes.js';
 import siteRoutes from './routes/site.routes.js';
 import deploymentRoutes from './routes/deployment.routes.js';
+import { DockerService } from './services/docker.service.js';
 
 const app = express();
 
@@ -84,10 +85,13 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start server
-const server = app.listen(config.PORT, () => {
+const server = app.listen(config.PORT, async () => {
   logger.info(`🚀 Server running on port ${config.PORT}`);
   logger.info(`📝 Environment: ${config.NODE_ENV}`);
   logger.info(`🔒 CORS origins: ${config.corsOrigins.join(', ')}`);
+
+  // Sync container status on startup
+  await DockerService.syncContainerStatus();
 });
 
 // Start deployment worker
