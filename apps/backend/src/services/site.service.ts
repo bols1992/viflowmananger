@@ -4,7 +4,6 @@ import { generateSlug, isValidSlug } from '../utils/slug.js';
 import { isValidDomain } from '../utils/domain.js';
 import { logger } from '../logger.js';
 import { config } from '../config.js';
-import { hashPassword } from '../utils/password.js';
 
 export interface CreateSiteDto {
   name: string;
