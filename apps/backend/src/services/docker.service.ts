@@ -17,6 +17,7 @@ export class DockerService {
   private static readonly NGINX_SITES_DIR = '/etc/nginx/sites-enabled';
   private static readonly BASE_PORT = 8100;
   private static usedPorts = new Set<number>();
+  private static readonly DOCKER_CMD = 'sudo docker'; // Use sudo for docker commands
 
   /**
    * Find next available port starting from BASE_PORT
@@ -25,7 +26,7 @@ export class DockerService {
     // Check existing containers to avoid conflicts
     try {
       const { stdout } = await execAsync(
-        'docker ps -a --format "{{.Ports}}"'
+        `${this.DOCKER_CMD} ps -a --format "{{.Ports}}"`
       );
       const ports = stdout
         .split('\n')
@@ -139,7 +140,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
 
       // Build image
       const { stdout, stderr } = await execAsync(
-        `docker build -t ${imageName} "${extractPath}"`,
+        `${this.DOCKER_CMD} build -t ${imageName} "${extractPath}"`,
         { maxBuffer: 1024 * 1024 * 10 } // 10MB buffer for build output
       );
 
@@ -175,7 +176,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
 
       // Start new container
       const { stdout } = await execAsync(
-        `docker run -d --name ${containerName} -p ${port}:80 --restart unless-stopped ${imageName}`
+        `${this.DOCKER_CMD} run -d --name ${containerName} -p ${port}:80 --restart unless-stopped ${imageName}`
       );
 
       const containerId = stdout.trim();
@@ -194,7 +195,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   static async stopContainer(containerName: string): Promise<void> {
     try {
       logger.info(`Stopping container ${containerName}...`);
-      await execAsync(`docker stop ${containerName}`);
+      await execAsync(`${this.DOCKER_CMD} stop ${containerName}`);
       logger.info(`Container ${containerName} stopped`);
     } catch (error: any) {
       logger.error(`Failed to stop container ${containerName}`, error);
@@ -208,7 +209,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   static async startExistingContainer(containerName: string): Promise<void> {
     try {
       logger.info(`Starting container ${containerName}...`);
-      await execAsync(`docker start ${containerName}`);
+      await execAsync(`${this.DOCKER_CMD} start ${containerName}`);
       logger.info(`Container ${containerName} started`);
     } catch (error: any) {
       logger.error(`Failed to start container ${containerName}`, error);
@@ -222,7 +223,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   static async removeContainer(containerName: string): Promise<void> {
     try {
       logger.info(`Removing container ${containerName}...`);
-      await execAsync(`docker rm -f ${containerName}`);
+      await execAsync(`${this.DOCKER_CMD} rm -f ${containerName}`);
       logger.info(`Container ${containerName} removed`);
     } catch (error: any) {
       // It's okay if container doesn't exist
@@ -236,7 +237,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   static async removeImage(imageName: string): Promise<void> {
     try {
       logger.info(`Removing image ${imageName}...`);
-      await execAsync(`docker rmi -f ${imageName}`);
+      await execAsync(`${this.DOCKER_CMD} rmi -f ${imageName}`);
       logger.info(`Image ${imageName} removed`);
     } catch (error: any) {
       logger.warn(`Could not remove image ${imageName}`, error);
@@ -251,7 +252,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   ): Promise<'running' | 'stopped' | 'error'> {
     try {
       const { stdout } = await execAsync(
-        `docker inspect -f '{{.State.Status}}' ${containerName}`
+        `${this.DOCKER_CMD} inspect -f '{{.State.Status}}' ${containerName}`
       );
       const status = stdout.trim();
 
@@ -306,11 +307,11 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
 
       // Test nginx config
       logger.info('Testing Nginx configuration...');
-      await execAsync('nginx -t');
+      await execAsync('sudo nginx -t');
 
       // Reload nginx
       logger.info('Reloading Nginx...');
-      await execAsync('nginx -s reload');
+      await execAsync('sudo nginx -s reload');
 
       logger.info('Nginx configuration updated successfully');
     } catch (error: any) {
@@ -334,7 +335,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
 
       // Reload nginx
       logger.info('Reloading Nginx...');
-      await execAsync('nginx -s reload');
+      await execAsync('sudo nginx -s reload');
 
       logger.info('Nginx configuration removed successfully');
     } catch (error: any) {
