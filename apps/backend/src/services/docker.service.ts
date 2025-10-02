@@ -177,8 +177,8 @@ export class DockerService {
     return `FROM ${baseImage}
 WORKDIR /app
 COPY . .
-EXPOSE 5010
-ENV ASPNETCORE_URLS=http://+:5010
+EXPOSE 5001
+ENV ASPNETCORE_URLS=http://+:5001
 ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
 `;
   }
@@ -238,9 +238,9 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
         `Starting container ${containerName} on port ${port}...`
       );
 
-      // Start new container (map host port to container port 5010)
+      // Start new container (map host port to container port 5001)
       const { stdout } = await execAsync(
-        `${this.DOCKER_CMD} run -d --name ${containerName} -p ${port}:5010 --restart unless-stopped ${imageName}`
+        `${this.DOCKER_CMD} run -d --name ${containerName} -p ${port}:5001 --restart unless-stopped ${imageName}`
       );
 
       const containerId = stdout.trim();
