@@ -38,22 +38,24 @@ app.use(
   })
 );
 
-// SECURITY: Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs (relaxed for development)
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/', limiter);
+// SECURITY: Rate limiting (disabled for testing)
+// TODO: Re-enable in production with proper limits
+if (config.isProduction) {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use('/api/', limiter);
 
-// Stricter rate limit for auth endpoints
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 50, // 50 login attempts per 15 minutes (relaxed for testing)
-  skipSuccessfulRequests: true,
-});
-app.use('/api/auth/login', authLimiter);
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 50,
+    skipSuccessfulRequests: true,
+  });
+  app.use('/api/auth/login', authLimiter);
+}
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -62,8 +64,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Cookie parsing
 app.use(cookieParser());
 
-// Health check
+// Health check (both routes for compatibility)
 app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
