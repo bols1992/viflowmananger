@@ -455,28 +455,11 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       logger.info('Waiting for Nginx to be ready...');
       await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
 
-      // Request SSL certificate with certbot (optional)
-      logger.info(`Requesting SSL certificate for ${domain}...`);
-      try {
-        // Run certbot as root using sudo (requires proper sudoers configuration)
-        const certbotCmd = `sudo /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
-
-        logger.info(`Executing certbot command: ${certbotCmd}`);
-
-        const { stdout, stderr } = await execAsync(certbotCmd, {
-          timeout: 90000, // 90 second timeout
-        });
-
-        logger.info(`Certbot stdout: ${stdout || '(empty)'}`);
-        if (stderr) logger.info(`Certbot stderr: ${stderr}`);
-
-        logger.info(`SSL certificate obtained for ${domain}`);
-      } catch (certError: any) {
-        logger.error(`Certbot failed with error: ${certError.message}`);
-        logger.warn('The site will work over HTTP. To enable HTTPS, run certbot manually:');
-        logger.warn(`  sudo certbot --nginx -d ${domain}`);
-        // Don't throw - nginx config is still valid without SSL
-      }
+      // Note: SSL certificate generation is disabled in automatic deployment
+      // due to /etc/letsencrypt filesystem permission issues.
+      // SSL certificates must be obtained manually after deployment:
+      logger.info(`SSL certificate must be obtained manually for ${domain}`);
+      logger.info(`Run: sudo certbot --nginx -d ${domain}`);
 
     } catch (error: any) {
       logger.error('Failed to update Nginx config', error);
