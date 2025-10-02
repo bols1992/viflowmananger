@@ -8,6 +8,10 @@ export interface Site {
   description?: string;
   basicAuthUser: string;
   basicAuthEnabled: boolean;
+  viflowVersion?: string;
+  containerName?: string;
+  containerPort?: number;
+  containerStatus?: 'building' | 'running' | 'stopped' | 'error';
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -78,5 +82,15 @@ export const sitesApi = {
 
   delete: async (id: string) => {
     await api.delete(`/sites/${id}`);
+  },
+
+  start: async (id: string) => {
+    const response = await api.post(`/sites/${id}/start`);
+    return response.data;
+  },
+
+  stop: async (id: string) => {
+    const response = await api.post(`/sites/${id}/stop`);
+    return response.data;
   },
 };

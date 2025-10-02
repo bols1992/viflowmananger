@@ -69,7 +69,7 @@ export function SitesPage() {
                   <span>Slug: {site.slug}</span>
                   <span>{site._count?.deployments || 0} Deployments</span>
                 </div>
-                <div className="mt-2 text-xs">
+                <div className="mt-2 flex gap-2 text-xs flex-wrap">
                   {site.basicAuthEnabled ? (
                     <span className="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-800">
                       Basic Auth aktiv
@@ -77,6 +77,24 @@ export function SitesPage() {
                   ) : (
                     <span className="inline-flex items-center px-2 py-1 rounded bg-gray-100 text-gray-800">
                       Basic Auth deaktiviert
+                    </span>
+                  )}
+                  {site.containerStatus && (
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded ${
+                        site.containerStatus === 'running'
+                          ? 'bg-green-100 text-green-800'
+                          : site.containerStatus === 'stopped'
+                          ? 'bg-gray-100 text-gray-800'
+                          : site.containerStatus === 'building'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {site.containerStatus === 'running' && '● Running'}
+                      {site.containerStatus === 'stopped' && '○ Stopped'}
+                      {site.containerStatus === 'building' && '⚙ Building'}
+                      {site.containerStatus === 'error' && '✕ Error'}
                     </span>
                   )}
                 </div>
