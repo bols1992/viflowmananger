@@ -235,9 +235,8 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       // Build auth proxy image
       logger.info('Building auth-proxy image...');
       const authProxyPath = path.join(process.cwd(), '..', 'auth-proxy');
-      await execAsync(
-        `${this.DOCKER_CMD} build -t viflow-auth-proxy "${authProxyPath}"`
-      );
+      const buildCmd = `cd "${authProxyPath}" && ${this.DOCKER_CMD} build -t viflow-auth-proxy .`;
+      await execAsync(buildCmd);
       logger.info('Auth proxy image built successfully');
     }
   }
