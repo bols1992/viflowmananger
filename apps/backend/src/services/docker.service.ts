@@ -235,9 +235,23 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       // Build auth proxy image
       logger.info('Building auth-proxy image...');
       const authProxyPath = path.join(process.cwd(), '..', 'auth-proxy');
-      // Use explicit bash -c to ensure proper command execution
-      const buildCmd = `bash -c 'cd "${authProxyPath}" && ${this.DOCKER_CMD} build -t viflow-auth-proxy .'`;
-      await execAsync(buildCmd);
+
+      // Try different approaches to build
+      try {
+        // First try: Use sh -c instead of bash -c (more portable)
+        await execAsync(`sh -c "cd '${authProxyPath}' && ${this.DOCKER_CMD} build -t viflow-auth-proxy ."`);
+      } catch (err1) {
+        logger.warn('First build attempt failed, trying alternative method...');
+        try {
+          // Second try: Use working directory option
+          await execAsync(`${this.DOCKER_CMD} build -t viflow-auth-proxy -f "${authProxyPath}/Dockerfile" "${authProxyPath}"`);
+        } catch (err2) {
+          logger.error('Failed to build auth-proxy image. Please build manually with:');
+          logger.error(`cd ${authProxyPath} && docker build -t viflow-auth-proxy .`);
+          throw new Error('Auth proxy image build failed. Please build the image manually.');
+        }
+      }
+
       logger.info('Auth proxy image built successfully');
     }
   }
