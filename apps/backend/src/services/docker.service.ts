@@ -458,16 +458,14 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       // Request SSL certificate with certbot (optional)
       logger.info(`Requesting SSL certificate for ${domain}...`);
       try {
-        // Run certbot with standard directories (requires viflowapp user to have read access to /etc/letsencrypt)
-        const certbotCmd = `sudo /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
+        // Use /etc/letsencrypt which requires running as root via sudo
+        // The key is to use 'sudo -i' to run in root's environment, not viflowapp's
+        const certbotCmd = `sudo -i /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
 
         logger.info(`Executing certbot command: ${certbotCmd}`);
-        logger.info(`Working directory: /tmp`);
 
         const { stdout, stderr } = await execAsync(certbotCmd, {
           timeout: 90000, // 90 second timeout
-          cwd: '/tmp', // Run from /tmp to avoid any working directory issues
-          env: { ...process.env, PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' }
         });
 
         logger.info(`Certbot stdout: ${stdout || '(empty)'}`);
