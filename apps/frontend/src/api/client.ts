@@ -13,8 +13,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Redirect to login on auth error
-      window.location.href = '/login';
+      // Redirect to login on auth error (but not if already on login page)
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
