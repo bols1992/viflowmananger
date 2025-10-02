@@ -458,8 +458,18 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       // Request SSL certificate with certbot (optional)
       logger.info(`Requesting SSL certificate for ${domain}...`);
       try {
-        // Run certbot with explicit environment and working directory
-        const certbotCmd = `cd /tmp && sudo /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
+        // Use writable directories for certbot
+        const certbotConfigDir = '/var/lib/letsencrypt';
+        const certbotWorkDir = '/var/lib/letsencrypt/work';
+        const certbotLogsDir = '/var/log/letsencrypt';
+
+        // Run certbot with custom directories to avoid /etc/letsencrypt read-only issue
+        const certbotCmd = `cd /tmp && sudo /usr/bin/certbot --nginx -d ${domain} ` +
+          `--config-dir ${certbotConfigDir} ` +
+          `--work-dir ${certbotWorkDir} ` +
+          `--logs-dir ${certbotLogsDir} ` +
+          `--non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
+
         const { stdout, stderr } = await execAsync(certbotCmd, {
           timeout: 90000, // 90 second timeout
           env: { ...process.env, PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' }
