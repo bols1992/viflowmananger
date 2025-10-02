@@ -141,9 +141,19 @@ router.post(
       const zip = new AdmZip(req.file.path);
       zip.extractAllTo(extractPath, true);
 
+      // Find ViFlow DLL
+      logger.info({ siteId }, 'Searching for ViFlow application...');
+      const dllPath = await DockerService.findViFlowDll(extractPath);
+
+      if (!dllPath) {
+        throw new AppError(400, 'Kein ViFlow Export erkannt. Die Datei "ViCon.ViFlow.WebModel.Server.dll" wurde nicht gefunden.');
+      }
+
+      logger.info({ siteId, dllPath }, 'ViFlow application found');
+
       // Detect ViFlow version
       logger.info({ siteId }, 'Detecting ViFlow version...');
-      const viflowVersion = await DockerService.detectViFlowVersion(extractPath);
+      const viflowVersion = await DockerService.detectViFlowVersion(dllPath);
       logger.info({ siteId, viflowVersion }, 'ViFlow version detected');
 
       // Clean up old container and image if exists
@@ -152,9 +162,9 @@ router.post(
         await DockerService.cleanup(siteId, site.domain);
       }
 
-      // Build Docker image
+      // Build Docker image (use dllPath instead of extractPath)
       logger.info({ siteId }, 'Building Docker image...');
-      const imageName = await DockerService.buildImage(siteId, extractPath, viflowVersion);
+      const imageName = await DockerService.buildImage(siteId, dllPath, viflowVersion);
 
       // Get available port
       const port = await DockerService.getAvailablePort();

@@ -51,22 +51,61 @@ export class DockerService {
   }
 
   /**
+   * Find the DLL in extracted files (might be in subdirectory)
+   */
+  static async findViFlowDll(extractPath: string): Promise<string | null> {
+    const dllName = 'ViCon.ViFlow.WebModel.Server.dll';
+
+    // Check root directory first
+    const rootDllPath = path.join(extractPath, dllName);
+    try {
+      await fs.access(rootDllPath);
+      return extractPath; // DLL is in root
+    } catch {
+      // Search in subdirectories (max depth 2)
+      const searchDirs = async (dir: string, depth: number): Promise<string | null> => {
+        if (depth > 2) return null;
+
+        try {
+          const entries = await fs.readdir(dir, { withFileTypes: true });
+
+          for (const entry of entries) {
+            if (entry.isDirectory()) {
+              const subPath = path.join(dir, entry.name);
+              const dllPath = path.join(subPath, dllName);
+
+              try {
+                await fs.access(dllPath);
+                return subPath; // Found DLL in subdirectory
+              } catch {
+                // Continue searching
+                const found = await searchDirs(subPath, depth + 1);
+                if (found) return found;
+              }
+            }
+          }
+        } catch (error) {
+          logger.warn(`Error searching directory ${dir}`, error);
+        }
+
+        return null;
+      };
+
+      return await searchDirs(extractPath, 0);
+    }
+  }
+
+  /**
    * Detect ViFlow version from extracted files
    */
-  static async detectViFlowVersion(extractPath: string): Promise<'7' | '8'> {
+  static async detectViFlowVersion(dllPath: string): Promise<'7' | '8'> {
     try {
-      // Look for the main DLL
-      const dllPath = path.join(
-        extractPath,
-        'ViCon.ViFlow.WebModel.Server.dll'
-      );
-
-      // Check if file exists
+      // Check if DLL exists
+      const fullDllPath = path.join(dllPath, 'ViCon.ViFlow.WebModel.Server.dll');
       try {
-        await fs.access(dllPath);
+        await fs.access(fullDllPath);
       } catch {
-        logger.warn(`Main DLL not found at ${dllPath}, defaulting to version 8`);
-        return '8';
+        throw new Error('ViFlow DLL not found');
       }
 
       // Try to read assembly info or version file
@@ -77,7 +116,7 @@ export class DockerService {
       ];
 
       for (const file of possibleNet8Indicators) {
-        const filePath = path.join(extractPath, file);
+        const filePath = path.join(dllPath, file);
         try {
           const content = await fs.readFile(filePath, 'utf-8');
 
@@ -98,7 +137,7 @@ export class DockerService {
       return '8';
     } catch (error) {
       logger.error('Error detecting ViFlow version', error);
-      return '8';
+      throw error;
     }
   }
 
@@ -304,7 +343,14 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       const config = this.generateNginxConfig(domain, port);
 
       logger.info(`Writing Nginx config to ${configPath}...`);
-      await fs.writeFile(configPath, config);
+
+      // Write to temp file first, then move with sudo
+      const tempPath = `/tmp/viflow-nginx-${domain}.conf`;
+      await fs.writeFile(tempPath, config);
+
+      // Move to nginx directory with sudo
+      await execAsync(`sudo mv ${tempPath} ${configPath}`);
+      await execAsync(`sudo chmod 644 ${configPath}`);
 
       // Test nginx config
       logger.info('Testing Nginx configuration...');
