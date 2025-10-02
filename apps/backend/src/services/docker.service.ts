@@ -458,9 +458,8 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       // Request SSL certificate with certbot (optional)
       logger.info(`Requesting SSL certificate for ${domain}...`);
       try {
-        // Use /etc/letsencrypt which requires running as root via sudo
-        // The key is to use 'sudo -i' to run in root's environment, not viflowapp's
-        const certbotCmd = `sudo -i /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
+        // Run certbot as root using sudo (requires proper sudoers configuration)
+        const certbotCmd = `sudo /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
 
         logger.info(`Executing certbot command: ${certbotCmd}`);
 
@@ -469,12 +468,11 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
         });
 
         logger.info(`Certbot stdout: ${stdout || '(empty)'}`);
-        logger.info(`Certbot stderr: ${stderr || '(empty)'}`);
+        if (stderr) logger.info(`Certbot stderr: ${stderr}`);
 
         logger.info(`SSL certificate obtained for ${domain}`);
       } catch (certError: any) {
         logger.error(`Certbot failed with error: ${certError.message}`);
-        logger.error(`Full error:`, certError);
         logger.warn('The site will work over HTTP. To enable HTTPS, run certbot manually:');
         logger.warn(`  sudo certbot --nginx -d ${domain}`);
         // Don't throw - nginx config is still valid without SSL
