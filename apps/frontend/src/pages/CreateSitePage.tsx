@@ -14,7 +14,6 @@ const createSiteSchema = z.object({
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Nur Kleinbuchstaben, Zahlen und Bindestriche'),
   description: z.string().max(500).optional(),
   basicAuthPassword: z.string().min(8, 'Mindestens 8 Zeichen').max(100),
-  basicAuthEnabled: z.boolean().default(true),
 });
 
 type CreateSiteForm = z.infer<typeof createSiteSchema>;
@@ -29,9 +28,6 @@ export function CreateSitePage() {
     formState: { errors, isSubmitting },
   } = useForm<CreateSiteForm>({
     resolver: zodResolver(createSiteSchema),
-    defaultValues: {
-      basicAuthEnabled: true,
-    },
   });
 
   const onSubmit = async (data: CreateSiteForm) => {
@@ -44,7 +40,7 @@ export function CreateSitePage() {
         domain: fullDomain,
         description: data.description,
         basicAuthPassword: data.basicAuthPassword,
-        basicAuthEnabled: data.basicAuthEnabled,
+        basicAuthEnabled: true, // Always enabled
       });
       navigate(`/sites/${site.id}`);
     } catch (err: any) {
@@ -117,34 +113,22 @@ export function CreateSitePage() {
           </div>
 
           <div>
-            <label htmlFor="basicAuthPassword" className="block text-sm font-medium text-gray-700">
-              Basic Auth Passwort *
+            <label htmlFor="basicAuthPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Passwort *
             </label>
             <input
               id="basicAuthPassword"
               type="password"
               {...register('basicAuthPassword')}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="Mindestens 8 Zeichen"
             />
             {errors.basicAuthPassword && (
-              <p className="mt-1 text-sm text-red-600">{errors.basicAuthPassword.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.basicAuthPassword.message}</p>
             )}
-            <p className="mt-1 text-xs text-gray-500">
-              Dieses Passwort wird für den Nginx Basic Auth Schutz verwendet
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Dieses Passwort wird für die Login-Seite der Website verwendet
             </p>
-          </div>
-
-          <div className="flex items-center">
-            <input
-              id="basicAuthEnabled"
-              type="checkbox"
-              {...register('basicAuthEnabled')}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label htmlFor="basicAuthEnabled" className="ml-2 block text-sm text-gray-900">
-              Basic Auth aktivieren (empfohlen)
-            </label>
           </div>
 
           <div className="flex gap-4">
