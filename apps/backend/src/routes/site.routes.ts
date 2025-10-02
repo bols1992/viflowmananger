@@ -161,6 +161,12 @@ router.post(
 
       logger.info({ siteId, dllPath }, 'ViFlow application found');
 
+      // Calculate relative path from extractPath to dllPath
+      const dllSubPath = dllPath === extractPath ? undefined : path.relative(extractPath, dllPath);
+      if (dllSubPath) {
+        logger.info({ siteId, dllSubPath }, 'DLL found in subdirectory');
+      }
+
       // Detect ViFlow version
       logger.info({ siteId }, 'Detecting ViFlow version...');
       const viflowVersion = await DockerService.detectViFlowVersion(dllPath);
@@ -174,7 +180,7 @@ router.post(
 
       // Build Docker image
       logger.info({ siteId }, 'Building Docker image...');
-      const imageName = await DockerService.buildImage(siteId, extractPath, viflowVersion);
+      const imageName = await DockerService.buildImage(siteId, extractPath, viflowVersion, dllSubPath);
 
       // Get available port
       const port = await DockerService.getAvailablePort();

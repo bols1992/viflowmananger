@@ -166,7 +166,7 @@ export class DockerService {
   /**
    * Generate Dockerfile content based on ViFlow version
    */
-  static generateDockerfile(viflowVersion: '7' | '8'): string {
+  static generateDockerfile(viflowVersion: '7' | '8', dllSubPath?: string): string {
     // ViFlow 8 uses .NET 6/8 (we use 6 for broader compatibility)
     // ViFlow 7 uses .NET Core 3.1
     const baseImage =
@@ -174,9 +174,12 @@ export class DockerService {
         ? 'mcr.microsoft.com/dotnet/aspnet:6.0'
         : 'mcr.microsoft.com/dotnet/core/aspnet:3.1';
 
+    // If DLL is in a subdirectory, copy from there
+    const copySource = dllSubPath ? `${dllSubPath}/.` : '.';
+
     return `FROM ${baseImage}
 WORKDIR /app
-COPY . .
+COPY ${copySource} .
 EXPOSE 5001
 ENV ASPNETCORE_URLS=http://+:5001
 ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
@@ -189,14 +192,15 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   static async buildImage(
     siteId: string,
     extractPath: string,
-    viflowVersion: '7' | '8'
+    viflowVersion: '7' | '8',
+    dllSubPath?: string
   ): Promise<string> {
     const imageName = `viflow-site-${siteId}`;
 
     try {
       // Create Dockerfile
       const dockerfilePath = path.join(extractPath, 'Dockerfile');
-      const dockerfileContent = this.generateDockerfile(viflowVersion);
+      const dockerfileContent = this.generateDockerfile(viflowVersion, dllSubPath);
       await fs.writeFile(dockerfilePath, dockerfileContent);
 
       logger.info(`Building Docker image ${imageName}...`);
