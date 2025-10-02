@@ -181,6 +181,15 @@ export function SiteDetailPage() {
                 </a>
               </div>
 
+              {site.basicAuthPassword && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Passwort:</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                    {site.basicAuthPassword}
+                  </span>
+                </div>
+              )}
+
               {isAdmin && (
                 <div className="pt-4 flex gap-3">
                   {site.containerStatus === 'running' && (
