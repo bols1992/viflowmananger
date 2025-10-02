@@ -33,9 +33,14 @@ const requireAuth = (req, res, next) => {
   res.redirect('/login');
 };
 
-// Serve logo
+// Serve logo as SVG (embedded)
 app.get('/logo.png', (req, res) => {
-  res.sendFile('/app/logo.png');
+  // Return pro-HT logo as inline SVG
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+    <text x="10" y="40" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white">pro-HT</text>
+  </svg>`;
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.send(svg);
 });
 
 // Login page
