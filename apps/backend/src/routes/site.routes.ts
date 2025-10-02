@@ -169,12 +169,12 @@ router.post(
       // Clean up old container and image if exists
       if (site.containerName) {
         logger.info({ siteId }, 'Cleaning up old container...');
-        await DockerService.cleanup(siteId, site.domain);
+        await DockerService.cleanup(siteId, site.domain, false); // Don't delete upload dir
       }
 
-      // Build Docker image (use dllPath instead of extractPath)
+      // Build Docker image
       logger.info({ siteId }, 'Building Docker image...');
-      const imageName = await DockerService.buildImage(siteId, dllPath, viflowVersion);
+      const imageName = await DockerService.buildImage(siteId, extractPath, viflowVersion);
 
       // Get available port
       const port = await DockerService.getAvailablePort();

@@ -417,7 +417,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   /**
    * Complete cleanup of a site's Docker resources
    */
-  static async cleanup(siteId: string, domain: string): Promise<void> {
+  static async cleanup(siteId: string, domain: string, deleteUploadDir = true): Promise<void> {
     const containerName = `viflow-site-${siteId}`;
     const imageName = `viflow-site-${siteId}`;
 
@@ -426,13 +426,15 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
     await this.removeImage(imageName).catch(() => {});
     await this.removeNginxConfig(domain).catch(() => {});
 
-    // Remove uploaded files
-    const uploadPath = path.join(this.UPLOAD_DIR, siteId);
-    try {
-      await fs.rm(uploadPath, { recursive: true, force: true });
-      logger.info(`Removed upload directory ${uploadPath}`);
-    } catch (error) {
-      logger.warn(`Could not remove upload directory ${uploadPath}`, error);
+    // Remove uploaded files only if requested
+    if (deleteUploadDir) {
+      const uploadPath = path.join(this.UPLOAD_DIR, siteId);
+      try {
+        await fs.rm(uploadPath, { recursive: true, force: true });
+        logger.info(`Removed upload directory ${uploadPath}`);
+      } catch (error) {
+        logger.warn(`Could not remove upload directory ${uploadPath}`, error);
+      }
     }
   }
 }
