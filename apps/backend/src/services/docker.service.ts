@@ -108,23 +108,45 @@ export class DockerService {
         throw new Error('ViFlow DLL not found');
       }
 
-      // Try to read assembly info or version file
-      // For now, we check for presence of .NET 8 specific files
-      const possibleNet8Indicators = [
-        'ViCon.ViFlow.WebModel.Server.runtimeconfig.json',
-        'appsettings.json'
-      ];
+      // Try to read runtimeconfig.json for exact .NET version
+      const runtimeConfigPath = path.join(dllPath, 'ViCon.ViFlow.WebModel.Server.runtimeconfig.json');
+      try {
+        const content = await fs.readFile(runtimeConfigPath, 'utf-8');
+        const config = JSON.parse(content);
 
-      for (const file of possibleNet8Indicators) {
+        // Check framework version
+        const frameworkVersion = config?.runtimeOptions?.framework?.version;
+        if (frameworkVersion) {
+          logger.info(`Found .NET framework version: ${frameworkVersion}`);
+
+          // .NET 8.x -> ViFlow 8
+          if (frameworkVersion.startsWith('8.')) {
+            return '8';
+          }
+          // .NET 6.x -> ViFlow 8 (uses same image)
+          if (frameworkVersion.startsWith('6.')) {
+            return '8';
+          }
+          // .NET 3.1.x -> ViFlow 7
+          if (frameworkVersion.startsWith('3.1')) {
+            return '7';
+          }
+        }
+      } catch (error) {
+        logger.warn('Could not read runtimeconfig.json', error);
+      }
+
+      // Fallback: check other files
+      const possibleIndicators = ['appsettings.json'];
+      for (const file of possibleIndicators) {
         const filePath = path.join(dllPath, file);
         try {
           const content = await fs.readFile(filePath, 'utf-8');
 
-          // Check for .NET 8 or .NET Core 3.1 indicators
-          if (content.includes('"version": "8.') || content.includes('net8.0')) {
+          if (content.includes('net8.0') || content.includes('net6.0')) {
             return '8';
           }
-          if (content.includes('"version": "3.1') || content.includes('netcoreapp3.1')) {
+          if (content.includes('netcoreapp3.1')) {
             return '7';
           }
         } catch {
@@ -145,9 +167,11 @@ export class DockerService {
    * Generate Dockerfile content based on ViFlow version
    */
   static generateDockerfile(viflowVersion: '7' | '8'): string {
+    // ViFlow 8 uses .NET 6/8 (we use 6 for broader compatibility)
+    // ViFlow 7 uses .NET Core 3.1
     const baseImage =
       viflowVersion === '8'
-        ? 'mcr.microsoft.com/dotnet/aspnet:8.0'
+        ? 'mcr.microsoft.com/dotnet/aspnet:6.0'
         : 'mcr.microsoft.com/dotnet/core/aspnet:3.1';
 
     return `FROM ${baseImage}
