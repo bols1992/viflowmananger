@@ -451,6 +451,10 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
 
       logger.info('Nginx configuration updated successfully');
 
+      // Wait a moment for Nginx to fully reload and start serving the domain
+      logger.info('Waiting for Nginx to be ready...');
+      await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
+
       // Request SSL certificate with certbot (optional)
       logger.info(`Requesting SSL certificate for ${domain}...`);
       try {
@@ -458,7 +462,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
         await execAsync('which certbot');
         await execAsync(
           `sudo certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`,
-          { timeout: 60000 } // 60 second timeout
+          { timeout: 90000 } // 90 second timeout (certbot can be slow)
         );
         logger.info(`SSL certificate obtained for ${domain}`);
       } catch (certError: any) {
