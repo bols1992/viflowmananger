@@ -51,9 +51,35 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-100 dark:bg-gray-800 py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-600 dark:text-gray-400">
-          ViFlow Manager © 2025
+      <footer className="bg-gray-100 dark:bg-gray-800 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              ViFlow Manager © 2025
+            </div>
+            <div className="flex flex-col items-center md:items-end gap-2">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Erstellt von{' '}
+                <a
+                  href="https://proht.de"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                >
+                  pro-HT
+                </a>
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-500">
+                Kontakt:{' '}
+                <a
+                  href="mailto:info@proht.de"
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  info@proht.de
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
