@@ -451,15 +451,20 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
 
       logger.info('Nginx configuration updated successfully');
 
-      // Request SSL certificate with certbot
+      // Request SSL certificate with certbot (optional)
       logger.info(`Requesting SSL certificate for ${domain}...`);
       try {
+        // Check if certbot is available and working
+        await execAsync('which certbot');
         await execAsync(
-          `sudo certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`
+          `sudo certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`,
+          { timeout: 60000 } // 60 second timeout
         );
         logger.info(`SSL certificate obtained for ${domain}`);
       } catch (certError: any) {
-        logger.error(`Failed to obtain SSL certificate: ${certError.message}`);
+        logger.warn(`Could not obtain SSL certificate (this is optional): ${certError.message}`);
+        logger.warn('The site will work over HTTP. To enable HTTPS, run certbot manually:');
+        logger.warn(`  sudo certbot --nginx -d ${domain}`);
         // Don't throw - nginx config is still valid without SSL
       }
 
