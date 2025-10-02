@@ -17,7 +17,7 @@ export class DockerService {
   private static readonly NGINX_SITES_DIR = '/etc/nginx/sites-enabled';
   private static readonly BASE_PORT = 8100;
   private static usedPorts = new Set<number>();
-  private static readonly DOCKER_CMD = 'sudo docker'; // Use sudo for docker commands
+  private static readonly DOCKER_CMD = 'docker'; // viflowapp user is in docker group
 
   /**
    * Find next available port starting from BASE_PORT
