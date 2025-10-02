@@ -138,9 +138,9 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
 
       logger.info(`Building Docker image ${imageName}...`);
 
-      // Build image
+      // Build image (using buildx for modern Docker)
       const { stdout, stderr } = await execAsync(
-        `${this.DOCKER_CMD} build -t ${imageName} "${extractPath}"`,
+        `${this.DOCKER_CMD} buildx build --load -t ${imageName} "${extractPath}"`,
         { maxBuffer: 1024 * 1024 * 10 } // 10MB buffer for build output
       );
 
