@@ -17,7 +17,7 @@ export class DockerService {
   private static readonly NGINX_SITES_DIR = '/etc/nginx/sites-enabled';
   private static readonly BASE_PORT = 8100;
   private static usedPorts = new Set<number>();
-  private static readonly DOCKER_CMD = '/usr/bin/docker'; // Use full path to avoid alias issues
+  private static readonly DOCKER_CMD = 'docker'; // Use docker from PATH
 
   /**
    * Find next available port starting from BASE_PORT
