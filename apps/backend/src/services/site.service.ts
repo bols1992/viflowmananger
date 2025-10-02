@@ -49,9 +49,6 @@ export class SiteService {
     }
     slug = uniqueSlug;
 
-    // Hash basic auth password
-    const basicAuthHash = await hashPassword(dto.basicAuthPassword);
-
     const site = await prisma.site.create({
       data: {
         name: dto.name,
@@ -59,7 +56,7 @@ export class SiteService {
         slug,
         description: dto.description,
         basicAuthUser: config.BASIC_AUTH_DEFAULT_USER,
-        basicAuthHash,
+        basicAuthPassword: dto.basicAuthPassword,
         basicAuthEnabled: dto.basicAuthEnabled ?? true,
       },
     });

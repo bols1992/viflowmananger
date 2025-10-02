@@ -185,11 +185,18 @@ router.post(
       // Get available port
       const port = await DockerService.getAvailablePort();
 
-      // Start container
-      logger.info({ siteId, port }, 'Starting Docker container...');
-      const containerName = await DockerService.startContainer(siteId, imageName, port);
+      // Start containers (ViFlow + Auth Proxy)
+      logger.info({ siteId, port }, 'Starting Docker containers...');
+      const authPassword = site.basicAuthEnabled ? site.basicAuthPassword : undefined;
+      const containerName = await DockerService.startContainer(
+        siteId,
+        imageName,
+        port,
+        site.name,
+        authPassword
+      );
 
-      // Update Nginx config
+      // Update Nginx config (now just proxies to auth container, no basic auth needed)
       logger.info({ siteId, domain: site.domain, port }, 'Updating Nginx configuration...');
       await DockerService.updateNginxConfig(site.domain, port);
 

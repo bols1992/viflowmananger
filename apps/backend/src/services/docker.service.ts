@@ -224,36 +224,82 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   }
 
   /**
-   * Start Docker container for a site
+   * Build auth-proxy image if it doesn't exist
+   */
+  static async ensureAuthProxyImage(): Promise<void> {
+    try {
+      // Check if image exists
+      await execAsync(`${this.DOCKER_CMD} image inspect viflow-auth-proxy`);
+      logger.info('Auth proxy image already exists');
+    } catch {
+      // Build auth proxy image
+      logger.info('Building auth-proxy image...');
+      const authProxyPath = path.join(process.cwd(), '..', 'auth-proxy');
+      await execAsync(
+        `${this.DOCKER_CMD} build -t viflow-auth-proxy "${authProxyPath}"`
+      );
+      logger.info('Auth proxy image built successfully');
+    }
+  }
+
+  /**
+   * Start Docker containers for a site (ViFlow + Auth Proxy)
    */
   static async startContainer(
     siteId: string,
     imageName: string,
-    port: number
+    port: number,
+    siteName: string,
+    authPassword?: string
   ): Promise<string> {
-    const containerName = `viflow-site-${siteId}`;
+    const viflowContainerName = `viflow-app-${siteId}`;
+    const authContainerName = `viflow-auth-${siteId}`;
+    const networkName = `viflow-net-${siteId}`;
 
     try {
-      // Stop and remove existing container if it exists
-      await this.stopContainer(containerName).catch(() => {});
-      await this.removeContainer(containerName).catch(() => {});
+      // Stop and remove existing containers
+      await this.stopContainer(authContainerName).catch(() => {});
+      await this.removeContainer(authContainerName).catch(() => {});
+      await this.stopContainer(viflowContainerName).catch(() => {});
+      await this.removeContainer(viflowContainerName).catch(() => {});
 
-      logger.info(
-        `Starting container ${containerName} on port ${port}...`
+      // Remove old network
+      await execAsync(`${this.DOCKER_CMD} network rm ${networkName}`).catch(() => {});
+
+      // Create Docker network for this site
+      logger.info(`Creating Docker network ${networkName}...`);
+      await execAsync(`${this.DOCKER_CMD} network create ${networkName}`);
+
+      // Start ViFlow container (not exposed to host, only on network)
+      logger.info(`Starting ViFlow container ${viflowContainerName}...`);
+      await execAsync(
+        `${this.DOCKER_CMD} run -d --name ${viflowContainerName} --network ${networkName} --restart unless-stopped ${imageName}`
       );
 
-      // Start new container (map host port to container port 5001)
-      const { stdout } = await execAsync(
-        `${this.DOCKER_CMD} run -d --name ${containerName} -p ${port}:5001 --restart unless-stopped ${imageName}`
-      );
+      // Ensure auth-proxy image exists
+      await this.ensureAuthProxyImage();
 
-      const containerId = stdout.trim();
-      logger.info(`Container ${containerName} started with ID ${containerId}`);
+      // Start auth-proxy container (exposed on host port)
+      logger.info(`Starting auth proxy container ${authContainerName} on port ${port}...`);
+      const authCmd = authPassword
+        ? `${this.DOCKER_CMD} run -d --name ${authContainerName} --network ${networkName} -p ${port}:3000 ` +
+          `-e AUTH_PASSWORD="${authPassword}" ` +
+          `-e BACKEND_URL="http://${viflowContainerName}:5001" ` +
+          `-e SITE_NAME="${siteName}" ` +
+          `--restart unless-stopped viflow-auth-proxy`
+        : `${this.DOCKER_CMD} run -d --name ${authContainerName} --network ${networkName} -p ${port}:3000 ` +
+          `-e BACKEND_URL="http://${viflowContainerName}:5001" ` +
+          `-e SITE_NAME="${siteName}" ` +
+          `--restart unless-stopped viflow-auth-proxy`;
 
-      return containerName;
+      await execAsync(authCmd);
+
+      logger.info(`Containers started successfully for site ${siteId}`);
+
+      return authContainerName;
     } catch (error: any) {
-      logger.error(`Failed to start container ${containerName}`, error);
-      throw new Error(`Failed to start container: ${error.message}`);
+      logger.error(`Failed to start containers for site ${siteId}`, error);
+      throw new Error(`Failed to start containers: ${error.message}`);
     }
   }
 
@@ -368,6 +414,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
         this.NGINX_SITES_DIR,
         `viflow-${domain}.conf`
       );
+
       const config = this.generateNginxConfig(domain, port);
 
       logger.info(`Writing Nginx config to ${configPath}...`);
@@ -389,6 +436,19 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       await execAsync('sudo nginx -s reload');
 
       logger.info('Nginx configuration updated successfully');
+
+      // Request SSL certificate with certbot
+      logger.info(`Requesting SSL certificate for ${domain}...`);
+      try {
+        await execAsync(
+          `sudo certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`
+        );
+        logger.info(`SSL certificate obtained for ${domain}`);
+      } catch (certError: any) {
+        logger.error(`Failed to obtain SSL certificate: ${certError.message}`);
+        // Don't throw - nginx config is still valid without SSL
+      }
+
     } catch (error: any) {
       logger.error('Failed to update Nginx config', error);
       throw new Error(`Failed to update Nginx: ${error.message}`);
@@ -406,7 +466,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       );
 
       logger.info(`Removing Nginx config ${configPath}...`);
-      await fs.unlink(configPath);
+      await execAsync(`sudo rm -f ${configPath}`);
 
       // Reload nginx
       logger.info('Reloading Nginx...');
@@ -464,16 +524,84 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   }
 
   /**
+   * Remove Let's Encrypt certificate for a domain
+   */
+  static async removeCertificate(domain: string): Promise<void> {
+    try {
+      logger.info(`Removing Let's Encrypt certificate for ${domain}...`);
+      await execAsync(`sudo certbot delete --cert-name ${domain} --non-interactive`);
+      logger.info(`Certificate for ${domain} removed`);
+    } catch (error: any) {
+      logger.warn(`Could not remove certificate for ${domain}:`, error.message);
+    }
+  }
+
+  /**
    * Complete cleanup of a site's Docker resources
    */
   static async cleanup(siteId: string, domain: string, deleteUploadDir = true): Promise<void> {
-    const containerName = `viflow-site-${siteId}`;
+    const viflowContainerName = `viflow-app-${siteId}`;
+    const authContainerName = `viflow-auth-${siteId}`;
+    const networkName = `viflow-net-${siteId}`;
     const imageName = `viflow-site-${siteId}`;
 
-    await this.stopContainer(containerName).catch(() => {});
-    await this.removeContainer(containerName).catch(() => {});
-    await this.removeImage(imageName).catch(() => {});
-    await this.removeNginxConfig(domain).catch(() => {});
+    logger.info(`Starting cleanup for site ${siteId} (${domain})...`);
+
+    // Stop and remove auth container
+    try {
+      await this.stopContainer(authContainerName);
+    } catch (error: any) {
+      logger.warn(`Failed to stop auth container: ${error.message}`);
+    }
+
+    try {
+      await this.removeContainer(authContainerName);
+    } catch (error: any) {
+      logger.warn(`Failed to remove auth container: ${error.message}`);
+    }
+
+    // Stop and remove viflow container
+    try {
+      await this.stopContainer(viflowContainerName);
+    } catch (error: any) {
+      logger.warn(`Failed to stop viflow container: ${error.message}`);
+    }
+
+    try {
+      await this.removeContainer(viflowContainerName);
+    } catch (error: any) {
+      logger.warn(`Failed to remove viflow container: ${error.message}`);
+    }
+
+    // Remove Docker network
+    try {
+      logger.info(`Removing Docker network ${networkName}...`);
+      await execAsync(`${this.DOCKER_CMD} network rm ${networkName}`);
+      logger.info(`Network ${networkName} removed`);
+    } catch (error: any) {
+      logger.warn(`Failed to remove network: ${error.message}`);
+    }
+
+    // Remove Docker image
+    try {
+      await this.removeImage(imageName);
+    } catch (error: any) {
+      logger.warn(`Failed to remove image: ${error.message}`);
+    }
+
+    // Remove Nginx config
+    try {
+      await this.removeNginxConfig(domain);
+    } catch (error: any) {
+      logger.warn(`Failed to remove Nginx config: ${error.message}`);
+    }
+
+    // Remove SSL certificate
+    try {
+      await this.removeCertificate(domain);
+    } catch (error: any) {
+      logger.warn(`Failed to remove certificate: ${error.message}`);
+    }
 
     // Remove uploaded files only if requested
     if (deleteUploadDir) {
@@ -485,5 +613,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
         logger.warn(`Could not remove upload directory ${uploadPath}`, error);
       }
     }
+
+    logger.info(`Cleanup completed for site ${siteId}`);
   }
 }
