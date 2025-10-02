@@ -461,18 +461,22 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
         // Run certbot with standard directories (requires viflowapp user to have read access to /etc/letsencrypt)
         const certbotCmd = `sudo /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
 
+        logger.info(`Executing certbot command: ${certbotCmd}`);
+        logger.info(`Working directory: /tmp`);
+
         const { stdout, stderr } = await execAsync(certbotCmd, {
           timeout: 90000, // 90 second timeout
           cwd: '/tmp', // Run from /tmp to avoid any working directory issues
           env: { ...process.env, PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' }
         });
 
-        if (stdout) logger.info(`Certbot output: ${stdout}`);
-        if (stderr) logger.warn(`Certbot stderr: ${stderr}`);
+        logger.info(`Certbot stdout: ${stdout || '(empty)'}`);
+        logger.info(`Certbot stderr: ${stderr || '(empty)'}`);
 
         logger.info(`SSL certificate obtained for ${domain}`);
       } catch (certError: any) {
-        logger.warn(`Could not obtain SSL certificate (this is optional): ${certError.message}`);
+        logger.error(`Certbot failed with error: ${certError.message}`);
+        logger.error(`Full error:`, certError);
         logger.warn('The site will work over HTTP. To enable HTTPS, run certbot manually:');
         logger.warn(`  sudo certbot --nginx -d ${domain}`);
         // Don't throw - nginx config is still valid without SSL
