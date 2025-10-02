@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add Docker container deployment system\n\n- Add Docker fields to Site schema (viflowVersion, containerName, containerPort, containerStatus)\n- Implement DockerService for container management\n- Auto-detect ViFlow version (7 or 8) and generate appropriate Dockerfile\n- Build and start containers on ZIP upload\n- Add start/stop/delete container endpoints\n- Update frontend with container status display and controls\n- Generate and manage Nginx configs dynamically\n- Add adm-zip dependency for extraction\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

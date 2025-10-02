@@ -20,9 +20,6 @@ export function SiteDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
-  const [deploying, setDeploying] = useState(false);
-  const [deployPassword, setDeployPassword] = useState('');
-
   useEffect(() => {
     if (id) {
       loadData();
@@ -60,25 +57,6 @@ export function SiteDetailPage() {
       setError(err.response?.data?.error || 'Upload fehlgeschlagen');
     } finally {
       setUploading(false);
-    }
-  };
-
-  const handleDeploy = async () => {
-    if (!id || !deployPassword) {
-      setError('Bitte Basic Auth Passwort eingeben');
-      return;
-    }
-
-    try {
-      setDeploying(true);
-      setError('');
-      await sitesApi.deploy(id, deployPassword);
-      setDeployPassword('');
-      setTimeout(() => loadData(), 1000);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Deployment fehlgeschlagen');
-    } finally {
-      setDeploying(false);
     }
   };
 
