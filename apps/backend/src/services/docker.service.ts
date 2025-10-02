@@ -458,12 +458,16 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       // Request SSL certificate with certbot (optional)
       logger.info(`Requesting SSL certificate for ${domain}...`);
       try {
-        // Check if certbot is available and working
-        await execAsync('which certbot');
-        await execAsync(
-          `sudo certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`,
-          { timeout: 90000 } // 90 second timeout (certbot can be slow)
-        );
+        // Run certbot with explicit environment and working directory
+        const certbotCmd = `cd /tmp && sudo /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
+        const { stdout, stderr } = await execAsync(certbotCmd, {
+          timeout: 90000, // 90 second timeout
+          env: { ...process.env, PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' }
+        });
+
+        if (stdout) logger.info(`Certbot output: ${stdout}`);
+        if (stderr) logger.warn(`Certbot stderr: ${stderr}`);
+
         logger.info(`SSL certificate obtained for ${domain}`);
       } catch (certError: any) {
         logger.warn(`Could not obtain SSL certificate (this is optional): ${certError.message}`);
