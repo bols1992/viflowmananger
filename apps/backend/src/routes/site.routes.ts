@@ -101,6 +101,7 @@ router.post(
   upload.single('file'),
   async (req, res, next) => {
     let extractPath: string | null = null;
+    let deployment: any = null;
 
     try {
       const siteId = req.params.id;
@@ -125,6 +126,15 @@ router.post(
       await prisma.site.update({
         where: { id: siteId },
         data: { containerStatus: 'building' },
+      });
+
+      // Create deployment record
+      const deployment = await prisma.deployment.create({
+        data: {
+          siteId: siteId,
+          status: 'RUNNING',
+          message: 'Building Docker container...',
+        },
       });
 
       // Create site-specific directory
@@ -188,6 +198,16 @@ router.post(
         },
       });
 
+      // Update deployment record as SUCCESS
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: {
+          status: 'SUCCESS',
+          message: `Container deployed on port ${port}`,
+          finishedAt: new Date(),
+        },
+      });
+
       // Clean up uploaded ZIP
       await fs.unlink(req.file.path).catch(() => {});
 
@@ -213,6 +233,18 @@ router.post(
         await prisma.site.update({
           where: { id: req.params.id },
           data: { containerStatus: 'error' },
+        }).catch(() => {});
+      }
+
+      // Update deployment record as FAILED
+      if (deployment) {
+        await prisma.deployment.update({
+          where: { id: deployment.id },
+          data: {
+            status: 'FAILED',
+            message: error instanceof Error ? error.message : 'Deployment failed',
+            finishedAt: new Date(),
+          },
         }).catch(() => {});
       }
 
