@@ -266,7 +266,7 @@ app.get('/login', (req, res) => {
     <div class="header">
       <img src="/logo.png" alt="pro-HT Logo" class="logo-img">
       <h1>${SITE_NAME}</h1>
-      <p>Geschützter Bereich</p>
+      <p>Geschützter Bereich - ViFlow Webmodell</p>
     </div>
 
     <div class="content">
