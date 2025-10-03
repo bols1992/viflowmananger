@@ -19,6 +19,9 @@ export function SiteDetailPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
 
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
   useEffect(() => {
     if (id) {
       loadData();
@@ -94,6 +97,37 @@ export function SiteDetailPage() {
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Löschen');
+    }
+  };
+
+  const handleLogoUpload = async () => {
+    if (!logoFile || !id) return;
+
+    try {
+      setUploadingLogo(true);
+      setError('');
+      await sitesApi.uploadLogo(id, logoFile);
+      await loadData();
+      setLogoFile(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Logo-Upload fehlgeschlagen');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleLogoDelete = async () => {
+    if (!id) return;
+    if (!confirm('Möchten Sie das Custom Logo wirklich löschen?')) {
+      return;
+    }
+
+    try {
+      setError('');
+      await sitesApi.deleteLogo(id);
+      await loadData();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler beim Löschen des Logos');
     }
   };
 
@@ -211,6 +245,46 @@ export function SiteDetailPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {isAdmin && (
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">🎨 Custom Logo</h2>
+
+            {site.customLogoPath && (
+              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <span className="text-sm text-green-700 dark:text-green-300">✓ Custom Logo aktiv</span>
+                <button
+                  onClick={handleLogoDelete}
+                  className="px-3 py-1 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-all font-semibold"
+                >
+                  Löschen
+                </button>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Logo hochladen (PNG, JPG, SVG, WebP)
+              </label>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-purple-50 file:to-pink-50 dark:file:from-purple-900 dark:file:to-pink-900 file:text-purple-700 dark:file:text-purple-200 hover:file:from-purple-100 hover:file:to-pink-100 dark:hover:file:from-purple-800 dark:hover:file:to-pink-800 file:transition-all file:cursor-pointer"
+              />
+            </div>
+
+            {logoFile && (
+              <button
+                onClick={handleLogoUpload}
+                disabled={uploadingLogo}
+                className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-semibold"
+              >
+                {uploadingLogo ? 'Hochladen...' : 'Logo hochladen'}
+              </button>
+            )}
           </div>
         )}
 

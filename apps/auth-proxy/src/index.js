@@ -2,6 +2,8 @@ import express from 'express';
 import session from 'express-session';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import cookieParser from 'cookie-parser';
+import fs from 'fs';
+import path from 'path';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,6 +11,8 @@ const AUTH_PASSWORD = process.env.AUTH_PASSWORD || 'changeme';
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5001';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'viflow-secret-' + Math.random();
 const SITE_NAME = process.env.SITE_NAME || 'ViFlow Site';
+const SITE_ID = process.env.SITE_ID || '';
+const UPLOAD_DIR = process.env.UPLOAD_DIR || '/opt/viflowapp/data/uploads';
 
 // Middleware
 app.use(express.urlencoded({ extended: true }));
@@ -33,8 +37,23 @@ const requireAuth = (req, res, next) => {
   res.redirect('/login');
 };
 
-// Serve logo
+// Serve logo - dynamic (custom or default)
 app.get('/logo.png', (req, res) => {
+  // Try to serve custom logo first
+  if (SITE_ID) {
+    const customLogoDir = path.join(UPLOAD_DIR, SITE_ID, 'logo');
+
+    // Try different extensions
+    const extensions = ['.png', '.jpg', '.jpeg', '.svg', '.webp'];
+    for (const ext of extensions) {
+      const customLogoPath = path.join(customLogoDir, 'logo' + ext);
+      if (fs.existsSync(customLogoPath)) {
+        return res.sendFile(customLogoPath);
+      }
+    }
+  }
+
+  // Fallback to default logo
   res.sendFile('/app/logo.png');
 });
 

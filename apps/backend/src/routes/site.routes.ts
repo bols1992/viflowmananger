@@ -42,6 +42,34 @@ const upload = multer({
   },
 });
 
+// Configure multer for logo uploads
+const logoUpload = multer({
+  storage: multer.diskStorage({
+    destination: async (req, _file, cb) => {
+      const siteId = req.params.id;
+      const logoDir = path.join(config.UPLOAD_DIR, siteId, 'logo');
+      await fs.mkdir(logoDir, { recursive: true });
+      cb(null, logoDir);
+    },
+    filename: (_req, file, cb) => {
+      // Keep original extension
+      cb(null, 'logo' + path.extname(file.originalname));
+    },
+  }),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+  fileFilter: (_req, file, cb) => {
+    // Only accept image files
+    const allowedMimes = ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml', 'image/webp'];
+    if (!allowedMimes.includes(file.mimetype)) {
+      cb(new AppError(400, 'Only image files (PNG, JPG, SVG, WebP) are allowed'));
+      return;
+    }
+    cb(null, true);
+  },
+});
+
 const createSiteSchema = z.object({
   name: z.string().min(1).max(100),
   domain: z.string().min(3).max(253),
@@ -371,6 +399,80 @@ router.post('/:id/stop', authenticate, requireAdmin, async (req, res, next) => {
     logger.info({ siteId, containerName: site.containerName }, 'Container stopped');
 
     res.json({ success: true, status: 'stopped' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/sites/:id/logo
+ * Upload custom logo for site
+ */
+router.post(
+  '/:id/logo',
+  authenticate,
+  requireAdmin,
+  logoUpload.single('logo'),
+  async (req, res, next) => {
+    try {
+      const siteId = req.params.id;
+
+      if (!req.file) {
+        throw new AppError(400, 'No logo file uploaded');
+      }
+
+      // Validate site exists
+      const site = await siteService.getSiteById(siteId);
+
+      // Update site with logo path
+      const logoPath = path.join(siteId, 'logo', req.file.filename);
+      await prisma.site.update({
+        where: { id: siteId },
+        data: { customLogoPath: logoPath },
+      });
+
+      logger.info({ siteId, logoPath }, 'Custom logo uploaded');
+
+      res.json({
+        success: true,
+        logoPath,
+      });
+    } catch (error) {
+      // Clean up on error
+      if (req.file) {
+        await fs.unlink(req.file.path).catch(() => {});
+      }
+      next(error);
+    }
+  }
+);
+
+/**
+ * DELETE /api/sites/:id/logo
+ * Delete custom logo for site
+ */
+router.delete('/:id/logo', authenticate, requireAdmin, async (req, res, next) => {
+  try {
+    const siteId = req.params.id;
+    const site = await siteService.getSiteById(siteId);
+
+    if (!site.customLogoPath) {
+      throw new AppError(404, 'No custom logo found for this site');
+    }
+
+    // Delete logo file
+    const logoFullPath = path.join(config.UPLOAD_DIR, site.customLogoPath);
+    await fs.unlink(logoFullPath).catch(() => {});
+
+    // Update site
+    await prisma.site.update({
+      where: { id: siteId },
+      data: { customLogoPath: null },
+    });
+
+    logger.info({ siteId }, 'Custom logo deleted');
+
+    res.json({ success: true });
   } catch (error) {
     next(error);
   }

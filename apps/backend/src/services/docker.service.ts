@@ -297,13 +297,19 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
       logger.info(`Starting auth proxy container ${authContainerName} on port ${port}...`);
       const authCmd = authPassword
         ? `${this.DOCKER_CMD} run -d --name ${authContainerName} --network ${networkName} -p ${port}:3000 ` +
+          `-v ${this.UPLOAD_DIR}:${this.UPLOAD_DIR}:ro ` +
           `-e AUTH_PASSWORD="${authPassword}" ` +
           `-e BACKEND_URL="http://${viflowContainerName}:5001" ` +
           `-e SITE_NAME="${siteName}" ` +
+          `-e SITE_ID="${siteId}" ` +
+          `-e UPLOAD_DIR="${this.UPLOAD_DIR}" ` +
           `--restart unless-stopped viflow-auth-proxy`
         : `${this.DOCKER_CMD} run -d --name ${authContainerName} --network ${networkName} -p ${port}:3000 ` +
+          `-v ${this.UPLOAD_DIR}:${this.UPLOAD_DIR}:ro ` +
           `-e BACKEND_URL="http://${viflowContainerName}:5001" ` +
           `-e SITE_NAME="${siteName}" ` +
+          `-e SITE_ID="${siteId}" ` +
+          `-e UPLOAD_DIR="${this.UPLOAD_DIR}" ` +
           `--restart unless-stopped viflow-auth-proxy`;
 
       await execAsync(authCmd);

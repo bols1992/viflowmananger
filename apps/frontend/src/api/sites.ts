@@ -13,6 +13,7 @@ export interface Site {
   containerName?: string;
   containerPort?: number;
   containerStatus?: 'building' | 'running' | 'stopped' | 'error';
+  customLogoPath?: string;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -92,6 +93,24 @@ export const sitesApi = {
 
   stop: async (id: string) => {
     const response = await api.post(`/sites/${id}/stop`);
+    return response.data;
+  },
+
+  uploadLogo: async (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    const response = await api.post(`/sites/${id}/logo`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  },
+
+  deleteLogo: async (id: string) => {
+    const response = await api.delete(`/sites/${id}/logo`);
     return response.data;
   },
 };
