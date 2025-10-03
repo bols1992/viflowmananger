@@ -422,7 +422,7 @@ router.post(
       }
 
       // Validate site exists
-      const site = await siteService.getSiteById(siteId);
+      await siteService.getSiteById(siteId);
 
       // Update site with logo path
       const logoPath = path.join(siteId, 'logo', req.file.filename);
