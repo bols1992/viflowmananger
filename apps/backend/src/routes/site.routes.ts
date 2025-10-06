@@ -72,19 +72,22 @@ const logoUpload = multer({
 
 const createSiteSchema = z.object({
   name: z.string().min(1).max(100),
-  domain: z.string().min(3).max(253),
+  subdomain: z.string().min(1).max(63), // Subdomain part only (without base domain)
   description: z.string().max(500).optional(),
   basicAuthPassword: z.string().min(8).max(100),
   basicAuthEnabled: z.boolean().optional(),
+  tenantId: z.string().uuid().optional(), // Optional for admin
 });
 
 /**
  * GET /api/sites
- * Get all sites
+ * Get all sites (filtered by tenant if not admin)
  */
-router.get('/', authenticate, async (_req, res, next) => {
+router.get('/', authenticate, async (req, res, next) => {
   try {
-    const sites = await siteService.getSites();
+    // If user is tenant, only show their sites
+    const tenantId = req.user?.role === 'TENANT' ? req.user?.userId : undefined;
+    const sites = await siteService.getSites(tenantId);
     res.json({ sites });
   } catch (error) {
     next(error);
@@ -108,10 +111,37 @@ router.get('/:id', authenticate, async (req, res, next) => {
  * POST /api/sites
  * Create new site
  */
-router.post('/', authenticate, requireAdmin, async (req, res, next) => {
+router.post('/', authenticate, async (req, res, next) => {
   try {
     const data = createSiteSchema.parse(req.body);
-    const site = await siteService.createSite(data);
+
+    // Determine tenant ID
+    let tenantId = data.tenantId;
+    let baseDomain: string;
+
+    if (req.user?.role === 'TENANT') {
+      // Tenant users can only create sites for themselves
+      tenantId = req.user.userId;
+    }
+
+    // Get tenant's domain if tenantId is provided
+    if (tenantId) {
+      const { tenantService } = await import('../services/tenant.service.js');
+      baseDomain = await tenantService.getTenantDomain(tenantId);
+    } else {
+      // Fallback to default domain (for backward compatibility)
+      baseDomain = 'pm-iwt.de';
+    }
+
+    // Construct full domain from subdomain + base domain
+    const fullDomain = `${data.subdomain}.${baseDomain}`;
+
+    const site = await siteService.createSite({
+      ...data,
+      domain: fullDomain,
+      tenantId,
+    });
+
     res.status(201).json({ site });
   } catch (error) {
     next(error);

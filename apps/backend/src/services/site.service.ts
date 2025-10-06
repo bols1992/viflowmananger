@@ -11,6 +11,7 @@ export interface CreateSiteDto {
   description?: string;
   basicAuthPassword: string;
   basicAuthEnabled?: boolean;
+  tenantId?: string; // Optional tenant link
 }
 
 export class SiteService {
@@ -57,6 +58,7 @@ export class SiteService {
         basicAuthUser: config.BASIC_AUTH_DEFAULT_USER,
         basicAuthPassword: dto.basicAuthPassword,
         basicAuthEnabled: dto.basicAuthEnabled ?? true,
+        tenantId: dto.tenantId,
       },
     });
 
@@ -66,12 +68,20 @@ export class SiteService {
   }
 
   /**
-   * Get all sites
+   * Get all sites (optionally filtered by tenant)
    */
-  async getSites() {
+  async getSites(tenantId?: string) {
     return prisma.site.findMany({
+      where: tenantId ? { tenantId } : undefined,
       orderBy: { createdAt: 'desc' },
       include: {
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            domain: true,
+          },
+        },
         _count: {
           select: { deployments: true },
         },

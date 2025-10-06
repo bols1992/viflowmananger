@@ -11,9 +11,14 @@ const loginSchema = z.object({
   password: z.string().min(6),
 });
 
+const tenantLoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
 /**
  * POST /api/auth/login
- * Login with username and password
+ * Login with username and password (admin)
  */
 router.post('/login', async (req, res, next) => {
   try {
@@ -23,6 +28,30 @@ router.post('/login', async (req, res, next) => {
 
     // Set httpOnly cookie with JWT
     // SECURITY: httpOnly prevents XSS, secure requires HTTPS, sameSite prevents CSRF
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: config.isProduction,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    res.json({ user });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/auth/login/tenant
+ * Login with email and password (tenant)
+ */
+router.post('/login/tenant', async (req, res, next) => {
+  try {
+    const { email, password } = tenantLoginSchema.parse(req.body);
+
+    const { token, user } = await authService.loginTenant(email, password);
+
+    // Set httpOnly cookie with JWT
     res.cookie('token', token, {
       httpOnly: true,
       secure: config.isProduction,

@@ -4,6 +4,8 @@ export interface User {
   userId: string;
   username: string;
   role: string;
+  tenantId?: string;
+  tenantName?: string;
 }
 
 export interface LoginRequest {
@@ -11,9 +13,19 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface TenantLoginRequest {
+  email: string;
+  password: string;
+}
+
 export const authApi = {
   login: async (data: LoginRequest) => {
     const response = await api.post<{ user: User }>('/auth/login', data);
+    return response.data;
+  },
+
+  loginTenant: async (data: TenantLoginRequest) => {
+    const response = await api.post<{ user: User }>('/auth/login/tenant', data);
     return response.data;
   },
 

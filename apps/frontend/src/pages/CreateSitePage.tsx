@@ -2,9 +2,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { sitesApi } from '../api/sites';
+import { tenantsApi, Tenant } from '../api/tenants';
+import { useAuth } from '../context/AuthContext';
 
 const createSiteSchema = z.object({
   name: z.string().min(1, 'Name ist erforderlich').max(100),
@@ -14,13 +16,17 @@ const createSiteSchema = z.object({
     .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, 'Nur Kleinbuchstaben, Zahlen und Bindestriche'),
   description: z.string().max(500).optional(),
   basicAuthPassword: z.string().min(8, 'Mindestens 8 Zeichen').max(100),
+  tenantId: z.string().optional(),
 });
 
 type CreateSiteForm = z.infer<typeof createSiteSchema>;
 
 export function CreateSitePage() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
 
   const {
     register,
@@ -30,17 +36,32 @@ export function CreateSitePage() {
     resolver: zodResolver(createSiteSchema),
   });
 
+  useEffect(() => {
+    // Load tenants if admin
+    if (user?.role === 'ADMIN') {
+      loadTenants();
+    }
+  }, [user]);
+
+  const loadTenants = async () => {
+    try {
+      const data = await tenantsApi.getAll();
+      setTenants(data.filter(t => t.active));
+    } catch (err) {
+      console.error('Failed to load tenants', err);
+    }
+  };
+
   const onSubmit = async (data: CreateSiteForm) => {
     try {
       setError('');
-      // Combine subdomain with base domain
-      const fullDomain = `${data.subdomain}.pm-iwt.de`;
       const site = await sitesApi.create({
         name: data.name,
-        domain: fullDomain,
+        subdomain: data.subdomain,
         description: data.description,
         basicAuthPassword: data.basicAuthPassword,
-        basicAuthEnabled: true, // Always enabled
+        basicAuthEnabled: true,
+        tenantId: data.tenantId,
       });
       navigate(`/sites/${site.id}`);
     } catch (err: any) {
@@ -72,6 +93,30 @@ export function CreateSitePage() {
             )}
           </div>
 
+          {user?.role === 'ADMIN' && (
+            <div>
+              <label htmlFor="tenantId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Mandant (optional)
+              </label>
+              <select
+                id="tenantId"
+                {...register('tenantId')}
+                onChange={(e) => {
+                  const tenant = tenants.find(t => t.id === e.target.value);
+                  setSelectedTenant(tenant || null);
+                }}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="">Ohne Mandant (pm-iwt.de)</option>
+                {tenants.map(tenant => (
+                  <option key={tenant.id} value={tenant.id}>
+                    {tenant.name} ({tenant.domain})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
             <label htmlFor="subdomain" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Subdomain *
@@ -85,7 +130,7 @@ export function CreateSitePage() {
                 placeholder="meine-seite"
               />
               <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
-                .pm-iwt.de
+                .{selectedTenant?.domain || user?.tenantName || 'pm-iwt.de'}
               </span>
             </div>
             {errors.subdomain && (

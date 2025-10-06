@@ -98,7 +98,7 @@ export class DockerService {
   /**
    * Detect ViFlow version from extracted files
    */
-  static async detectViFlowVersion(dllPath: string): Promise<'7' | '8'> {
+  static async detectViFlowVersion(dllPath: string): Promise<'7' | '8' | '9'> {
     try {
       // Check if DLL exists
       const fullDllPath = path.join(dllPath, 'ViCon.ViFlow.WebModel.Server.dll');
@@ -114,16 +114,27 @@ export class DockerService {
         const content = await fs.readFile(runtimeConfigPath, 'utf-8');
         const config = JSON.parse(content);
 
-        // Check framework version
-        const frameworkVersion = config?.runtimeOptions?.framework?.version;
+        // Check framework version (supports both old and new format)
+        let frameworkVersion = config?.runtimeOptions?.framework?.version;
+
+        // New format: frameworks array
+        if (!frameworkVersion && config?.runtimeOptions?.frameworks) {
+          const netCoreApp = config.runtimeOptions.frameworks.find(
+            (f: any) => f.name === 'Microsoft.NETCore.App' || f.name === 'Microsoft.AspNetCore.App'
+          );
+          if (netCoreApp?.version) {
+            frameworkVersion = netCoreApp.version;
+          }
+        }
+
         if (frameworkVersion) {
           logger.info(`Found .NET framework version: ${frameworkVersion}`);
 
-          // .NET 8.x -> ViFlow 8
+          // .NET 8.x -> ViFlow 9
           if (frameworkVersion.startsWith('8.')) {
-            return '8';
+            return '9';
           }
-          // .NET 6.x -> ViFlow 8 (uses same image)
+          // .NET 6.x -> ViFlow 8
           if (frameworkVersion.startsWith('6.')) {
             return '8';
           }
@@ -143,7 +154,10 @@ export class DockerService {
         try {
           const content = await fs.readFile(filePath, 'utf-8');
 
-          if (content.includes('net8.0') || content.includes('net6.0')) {
+          if (content.includes('net8.0')) {
+            return '9';
+          }
+          if (content.includes('net6.0')) {
             return '8';
           }
           if (content.includes('netcoreapp3.1')) {
@@ -154,9 +168,9 @@ export class DockerService {
         }
       }
 
-      // Default to version 8 if detection fails
-      logger.warn('Could not detect ViFlow version, defaulting to 8');
-      return '8';
+      // Default to version 9 if detection fails (latest)
+      logger.warn('Could not detect ViFlow version, defaulting to 9');
+      return '9';
     } catch (error) {
       logger.error('Error detecting ViFlow version', error);
       throw error;
@@ -166,13 +180,18 @@ export class DockerService {
   /**
    * Generate Dockerfile content based on ViFlow version
    */
-  static generateDockerfile(viflowVersion: '7' | '8', dllSubPath?: string): string {
-    // ViFlow 8 uses .NET 6/8 (we use 6 for broader compatibility)
+  static generateDockerfile(viflowVersion: '7' | '8' | '9', dllSubPath?: string): string {
+    // ViFlow 9 uses .NET 8
+    // ViFlow 8 uses .NET 6
     // ViFlow 7 uses .NET Core 3.1
-    const baseImage =
-      viflowVersion === '8'
-        ? 'mcr.microsoft.com/dotnet/aspnet:6.0'
-        : 'mcr.microsoft.com/dotnet/core/aspnet:3.1';
+    let baseImage: string;
+    if (viflowVersion === '9') {
+      baseImage = 'mcr.microsoft.com/dotnet/aspnet:8.0';
+    } else if (viflowVersion === '8') {
+      baseImage = 'mcr.microsoft.com/dotnet/aspnet:6.0';
+    } else {
+      baseImage = 'mcr.microsoft.com/dotnet/core/aspnet:3.1';
+    }
 
     // If DLL is in a subdirectory, copy from there
     const copySource = dllSubPath ? `${dllSubPath}/.` : '.';
@@ -192,7 +211,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   static async buildImage(
     siteId: string,
     extractPath: string,
-    viflowVersion: '7' | '8',
+    viflowVersion: '7' | '8' | '9',
     dllSubPath?: string
   ): Promise<string> {
     const imageName = `viflow-site-${siteId}`;

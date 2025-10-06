@@ -194,7 +194,9 @@ export function SiteDetailPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">ViFlow Version:</span>
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {site.viflowVersion === '7' ? 'ViFlow 7 (.NET Core 3.1)' : 'ViFlow 8 (.NET Core 8)'}
+                  {site.viflowVersion === '7' && 'ViFlow 7 (.NET Core 3.1)'}
+                  {site.viflowVersion === '8' && 'ViFlow 8 (.NET 6)'}
+                  {site.viflowVersion === '9' && 'ViFlow 9 (.NET 8)'}
                 </span>
               </div>
 
@@ -250,11 +252,11 @@ export function SiteDetailPage() {
 
         {isAdmin && (
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">🎨 Custom Logo</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">🎨 Custom Login Logo</h2>
 
             {site.customLogoPath && (
               <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <span className="text-sm text-green-700 dark:text-green-300">✓ Custom Logo aktiv</span>
+                <span className="text-sm text-green-700 dark:text-green-300">✓ Custom Login Logo aktiv</span>
                 <button
                   onClick={handleLogoDelete}
                   className="px-3 py-1 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-all font-semibold"

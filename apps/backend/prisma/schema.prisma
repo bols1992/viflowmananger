@@ -18,6 +18,18 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String   // Company/customer name
+  domain    String   @unique // Base domain for sites (e.g., "pm-iwt.de")
+  email     String   @unique // Login email for tenant
+  passwordHash String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sites     Site[]
+}
+
 model Site {
   id               String       @id @default(uuid())
   name             String
@@ -27,14 +39,18 @@ model Site {
   basicAuthUser    String
   basicAuthPassword String       // Plain text password for htpasswd generation
   basicAuthEnabled Boolean      @default(true)
-  viflowVersion    String?      // "7" | "8"
+  viflowVersion    String?      // "7" | "8" | "9"
   containerName    String?      @unique
   containerPort    Int?
   containerStatus  String?      @default("stopped") // "building" | "running" | "stopped" | "error"
   customLogoPath   String?      // Path to custom logo file
+  tenantId         String?      // Link to tenant (nullable for migration)
+  tenant           Tenant?      @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   deployments      Deployment[]
+
+  @@index([tenantId])
 }
 
 model Deployment {

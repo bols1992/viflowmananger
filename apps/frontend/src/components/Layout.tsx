@@ -28,6 +28,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {user && (
             <div className="flex items-center gap-3">
+              {user.role === 'ADMIN' && (
+                <Link
+                  to="/tenants"
+                  className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all shadow-sm"
+                >
+                  Mandanten
+                </Link>
+              )}
               <div className="relative">
                 <button
                   onClick={() => setShowThemeMenu(!showThemeMenu)}

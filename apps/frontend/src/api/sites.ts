@@ -23,10 +23,11 @@ export interface Site {
 
 export interface CreateSiteRequest {
   name: string;
-  domain: string;
+  subdomain: string;
   description?: string;
   basicAuthPassword: string;
   basicAuthEnabled?: boolean;
+  tenantId?: string;
 }
 
 export interface UploadResponse {

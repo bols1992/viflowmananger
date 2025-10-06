@@ -12,6 +12,7 @@ import { createDeployWorker } from './queue/deploy.worker.js';
 import authRoutes from './routes/auth.routes.js';
 import siteRoutes from './routes/site.routes.js';
 import deploymentRoutes from './routes/deployment.routes.js';
+import tenantRoutes from './routes/tenant.routes.js';
 import { DockerService } from './services/docker.service.js';
 
 const app = express();
@@ -77,6 +78,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/sites', siteRoutes);
 app.use('/api/deployments', deploymentRoutes);
+app.use('/api/tenants', tenantRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
