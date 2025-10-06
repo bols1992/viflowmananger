@@ -496,15 +496,16 @@ server {
       const sslCertPath = `/etc/letsencrypt/live/${domain}/fullchain.pem`;
       const sslKeyPath = `/etc/letsencrypt/live/${domain}/privkey.pem`;
 
-      // Check using ls command with sudo (since files are owned by root)
+      // Check using certbot certificates command (lists all installed certificates)
       let sslExists = false;
       try {
-        await execAsync(`sudo ls ${sslCertPath} ${sslKeyPath} > /dev/null 2>&1`);
-        sslExists = true;
-        logger.info({ domain, sslCertPath, sslKeyPath }, 'SSL certificates found, will use HTTPS config');
-      } catch {
+        const { stdout } = await execAsync('sudo /usr/bin/certbot certificates');
+        // Check if domain appears in the list of certificates
+        sslExists = stdout.includes(domain);
+        logger.info({ domain, sslExists, sslCertPath, sslKeyPath }, sslExists ? 'SSL certificates found, will use HTTPS config' : 'No SSL certificates found, will use HTTP config');
+      } catch (err) {
+        logger.warn({ domain, error: err }, 'Failed to check SSL certificates, assuming none exist');
         sslExists = false;
-        logger.info({ domain, sslCertPath, sslKeyPath }, 'No SSL certificates found, will use HTTP config');
       }
 
       const configPath = path.join(
