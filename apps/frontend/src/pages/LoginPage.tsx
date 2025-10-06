@@ -6,53 +6,43 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { authApi } from '../api/auth';
 
-const adminLoginSchema = z.object({
+const loginSchema = z.object({
   username: z.string().min(3, 'Mindestens 3 Zeichen'),
   password: z.string().min(6, 'Mindestens 6 Zeichen'),
 });
 
-const tenantLoginSchema = z.object({
-  email: z.string().email('Gültige E-Mail erforderlich'),
-  password: z.string().min(6, 'Mindestens 6 Zeichen'),
-});
+type LoginForm = z.infer<typeof loginSchema>;
 
-type AdminLoginForm = z.infer<typeof adminLoginSchema>;
-type TenantLoginForm = z.infer<typeof tenantLoginSchema>;
+// Helper to detect if input is email
+const isEmail = (str: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
 
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
-  const [loginType, setLoginType] = useState<'admin' | 'tenant'>('admin');
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
-  } = useForm<AdminLoginForm | TenantLoginForm>({
-    resolver: zodResolver(loginType === 'admin' ? adminLoginSchema : tenantLoginSchema),
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
   });
 
-  const handleLoginTypeChange = (type: 'admin' | 'tenant') => {
-    setLoginType(type);
-    setError('');
-    reset();
-  };
-
-  const onSubmit = async (data: AdminLoginForm | TenantLoginForm) => {
+  const onSubmit = async (data: LoginForm) => {
     try {
       setError('');
-      if (loginType === 'admin') {
-        const adminData = data as AdminLoginForm;
-        await login(adminData.username, adminData.password);
-      } else {
-        const tenantData = data as TenantLoginForm;
-        // Call tenant login API and refresh page to load user
-        await authApi.loginTenant(tenantData);
+
+      // Auto-detect: if username contains @, it's a tenant login
+      if (isEmail(data.username)) {
+        await authApi.loginTenant({ email: data.username, password: data.password });
         window.location.href = '/';
         return;
+      } else {
+        // Admin login
+        await login(data.username, data.password);
       }
+
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Login fehlgeschlagen');
@@ -67,33 +57,7 @@ export function LoginPage() {
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-center">
             <img src="/logo_proht_hell.png" alt="pro-HT Logo" className="mx-auto mb-4 h-12 brightness-0 invert" />
             <h2 className="text-3xl font-bold text-white mb-2">ViFlow Manager</h2>
-            <p className="text-blue-100">{loginType === 'admin' ? 'Admin Login' : 'Mandanten Login'}</p>
-          </div>
-
-          {/* Login Type Tabs */}
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
-            <button
-              type="button"
-              onClick={() => handleLoginTypeChange('admin')}
-              className={`flex-1 py-3 px-4 text-sm font-semibold transition-all ${
-                loginType === 'admin'
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600'
-                  : 'bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-              }`}
-            >
-              👤 Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => handleLoginTypeChange('tenant')}
-              className={`flex-1 py-3 px-4 text-sm font-semibold transition-all ${
-                loginType === 'tenant'
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600'
-                  : 'bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-              }`}
-            >
-              🏢 Mandant
-            </button>
+            <p className="text-blue-100">Login</p>
           </div>
 
           {/* Form */}
@@ -107,49 +71,29 @@ export function LoginPage() {
               </div>
             )}
 
-            {loginType === 'admin' ? (
-              <div>
-                <label htmlFor="username" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                  Benutzername
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    👤
-                  </div>
-                  <input
-                    id="username"
-                    type="text"
-                    {...register('username' as any)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="admin"
-                  />
+            <div>
+              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                Benutzername oder E-Mail
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  👤
                 </div>
-                {'username' in errors && errors.username && (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.username.message}</p>
-                )}
+                <input
+                  id="username"
+                  type="text"
+                  {...register('username')}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="admin oder mail@example.com"
+                />
               </div>
-            ) : (
-              <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                  E-Mail
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    📧
-                  </div>
-                  <input
-                    id="email"
-                    type="email"
-                    {...register('email' as any)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="mail@example.com"
-                  />
-                </div>
-                {'email' in errors && errors.email && (
-                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
-                )}
-              </div>
-            )}
+              {errors.username && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.username.message}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Admin: Benutzername | Mandant: E-Mail-Adresse
+              </p>
+            </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">

@@ -40,14 +40,12 @@ export function SitesPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Webseiten</h1>
-          {isAdmin && (
-            <Link
-              to="/sites/new"
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
-            >
-              + Neue Webseite
-            </Link>
-          )}
+          <Link
+            to="/sites/new"
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
+          >
+            + Neue Webseite
+          </Link>
         </div>
 
         <div>

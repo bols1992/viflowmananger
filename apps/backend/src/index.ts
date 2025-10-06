@@ -13,6 +13,7 @@ import authRoutes from './routes/auth.routes.js';
 import siteRoutes from './routes/site.routes.js';
 import deploymentRoutes from './routes/deployment.routes.js';
 import tenantRoutes from './routes/tenant.routes.js';
+import passwordRoutes from './routes/password.routes.js';
 import { DockerService } from './services/docker.service.js';
 
 const app = express();
@@ -79,6 +80,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/sites', siteRoutes);
 app.use('/api/deployments', deploymentRoutes);
 app.use('/api/tenants', tenantRoutes);
+app.use('/api/password', passwordRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
