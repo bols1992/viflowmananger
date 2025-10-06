@@ -422,7 +422,58 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
    * Generate Nginx configuration for a site
    */
   static generateNginxConfig(domain: string, port: number): string {
-    return `server {
+    // Check if SSL certificates exist for this domain
+    const sslCertPath = `/etc/letsencrypt/live/${domain}/fullchain.pem`;
+    const sslKeyPath = `/etc/letsencrypt/live/${domain}/privkey.pem`;
+
+    // Try to check if certificates exist (synchronously for config generation)
+    let hasSsl = false;
+    try {
+      const fs = require('fs');
+      hasSsl = fs.existsSync(sslCertPath) && fs.existsSync(sslKeyPath);
+    } catch (err) {
+      hasSsl = false;
+    }
+
+    if (hasSsl) {
+      // Generate config with existing SSL certificates
+      return `# HTTP server - redirect to HTTPS
+server {
+    listen 80;
+    server_name ${domain};
+    return 301 https://$server_name$request_uri;
+}
+
+# HTTPS server
+server {
+    listen 443 ssl http2;
+    server_name ${domain};
+
+    ssl_certificate ${sslCertPath};
+    ssl_certificate_key ${sslKeyPath};
+
+    # SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    location / {
+        proxy_pass http://localhost:${port};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+`;
+    } else {
+      // Generate HTTP-only config (certbot will update it later)
+      return `server {
     listen 80;
     server_name ${domain};
 
@@ -440,6 +491,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
     }
 }
 `;
+    }
   }
 
   /**
