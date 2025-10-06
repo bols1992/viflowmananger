@@ -84,14 +84,14 @@ export function LoginPage() {
                   type="text"
                   {...register('username')}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="admin oder mail@example.com"
+                  placeholder="mail@example.com"
                 />
               </div>
               {errors.username && (
                 <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.username.message}</p>
               )}
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Admin: Benutzername | Mandant: E-Mail-Adresse
+                E-Mail-Adresse
               </p>
             </div>
 

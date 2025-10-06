@@ -57,9 +57,14 @@ export function CreateSitePage() {
 
   const loadCurrentTenant = async () => {
     try {
+      console.log('User data:', user);
       if (user?.tenantId) {
+        console.log('Loading tenant with ID:', user.tenantId);
         const data = await tenantsApi.getById(user.tenantId);
+        console.log('Loaded tenant data:', data);
         setCurrentTenant(data);
+      } else {
+        console.log('No tenantId found in user data');
       }
     } catch (err) {
       console.error('Failed to load current tenant', err);

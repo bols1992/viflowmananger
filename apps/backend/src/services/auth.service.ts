@@ -38,7 +38,7 @@ export class AuthService {
     return {
       token,
       user: {
-        id: user.id,
+        userId: user.id,
         username: user.username,
         role: user.role,
       },
@@ -84,7 +84,7 @@ export class AuthService {
     return {
       token,
       user: {
-        id: tenant.id,
+        userId: tenant.id,
         username: tenant.email,
         role: 'TENANT',
         tenantId: tenant.id,
