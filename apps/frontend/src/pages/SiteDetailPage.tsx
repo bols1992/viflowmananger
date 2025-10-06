@@ -131,8 +131,6 @@ export function SiteDetailPage() {
     }
   };
 
-  const isAdmin = user?.role === 'ADMIN';
-
   if (loading) {
     return (
       <Layout>
