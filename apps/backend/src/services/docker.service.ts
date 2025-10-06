@@ -540,11 +540,12 @@ server {
         logger.info('Waiting for Nginx to be ready...');
         await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
 
-        // Request SSL certificate with certbot (optional)
+        // Request SSL certificate with certbot (certonly mode - don't modify nginx config)
         logger.info(`Requesting SSL certificate for ${domain}...`);
         try {
-          // Run certbot with sudo (requires NOPASSWD in sudoers for certbot)
-          const certbotCmd = `sudo /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
+          // Use certonly to get certificate without modifying nginx config
+          // We'll manage the nginx config ourselves
+          const certbotCmd = `sudo /usr/bin/certbot certonly --webroot -w /var/www/html -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de`;
 
           logger.info(`Executing certbot command: ${certbotCmd}`);
 
@@ -556,10 +557,20 @@ server {
           if (stderr) logger.info(`Certbot stderr: ${stderr}`);
 
           logger.info(`SSL certificate obtained for ${domain}`);
+
+          // Now regenerate nginx config with HTTPS enabled
+          const httpsConfig = this.generateNginxConfig(domain, port, true);
+          const tempPath = `/tmp/viflow-nginx-${domain}.conf`;
+          await fs.writeFile(tempPath, httpsConfig);
+          await execAsync(`sudo mv ${tempPath} ${configPath}`);
+          await execAsync(`sudo chmod 644 ${configPath}`);
+          await execAsync('sudo nginx -t');
+          await execAsync('sudo nginx -s reload');
+          logger.info('Nginx config updated with HTTPS');
         } catch (certError: any) {
           logger.error(`Certbot failed with error: ${certError.message}`);
           logger.warn('The site will work over HTTP. To enable HTTPS, run certbot manually:');
-          logger.warn(`  sudo certbot --nginx -d ${domain}`);
+          logger.warn(`  sudo certbot certonly --webroot -w /var/www/html -d ${domain}`);
           // Don't throw - nginx config is still valid without SSL
         }
       }
