@@ -226,8 +226,9 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
 
       // Build image
       // Use DOCKER_BUILDKIT=0 to force classic builder
+      // Use --no-cache to ensure appsettings.json changes are applied
       const { stdout, stderr } = await execAsync(
-        `DOCKER_BUILDKIT=0 ${this.DOCKER_CMD} build -t ${imageName} "${extractPath}"`,
+        `DOCKER_BUILDKIT=0 ${this.DOCKER_CMD} build --no-cache -t ${imageName} "${extractPath}"`,
         { maxBuffer: 1024 * 1024 * 10 } // 10MB buffer for build output
       );
 
