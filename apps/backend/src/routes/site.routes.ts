@@ -208,6 +208,26 @@ router.post(
       const zip = new AdmZip(req.file.path);
       zip.extractAllTo(extractPath, true);
 
+      // Modify appsettings.json to enable SkipAuthentication
+      logger.info({ siteId }, 'Configuring appsettings.json...');
+      const appSettingsPath = path.join(extractPath, 'appsettings.json');
+      try {
+        const appSettingsContent = await fs.readFile(appSettingsPath, 'utf-8');
+        const appSettings = JSON.parse(appSettingsContent);
+
+        // Set SkipAuthentication to true
+        if (appSettings.ViFlow) {
+          appSettings.ViFlow.SkipAuthentication = true;
+        } else {
+          appSettings.ViFlow = { SkipAuthentication: true };
+        }
+
+        await fs.writeFile(appSettingsPath, JSON.stringify(appSettings, null, 2), 'utf-8');
+        logger.info({ siteId }, 'SkipAuthentication enabled in appsettings.json');
+      } catch (err) {
+        logger.warn({ siteId, error: err }, 'Could not modify appsettings.json - file may not exist or be invalid JSON');
+      }
+
       // Find ViFlow DLL
       logger.info({ siteId }, 'Searching for ViFlow application...');
       const dllPath = await DockerService.findViFlowDll(extractPath);
