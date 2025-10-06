@@ -3,11 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { sitesApi, Site } from '../api/sites';
 import { deploymentsApi, Deployment } from '../api/deployments';
-import { useAuth } from '../context/AuthContext';
 
 export function SiteDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [site, setSite] = useState<Site | null>(null);
