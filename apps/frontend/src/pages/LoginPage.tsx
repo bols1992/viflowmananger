@@ -73,7 +73,7 @@ export function LoginPage() {
 
             <div>
               <label htmlFor="username" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                Benutzername oder E-Mail
+                E-Mail
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
