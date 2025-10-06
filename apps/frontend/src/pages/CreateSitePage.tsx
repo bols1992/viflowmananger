@@ -38,11 +38,15 @@ export function CreateSitePage() {
   });
 
   useEffect(() => {
+    console.log('CreateSitePage - User:', user);
     if (user?.role === 'ADMIN') {
       loadTenants();
     } else if (user?.role === 'TENANT' && user.tenantId) {
       // Load current tenant's data to get domain
+      console.log('Loading tenant data for tenantId:', user.tenantId);
       loadCurrentTenant();
+    } else {
+      console.log('User is tenant but no tenantId:', user);
     }
   }, [user]);
 
@@ -58,7 +62,9 @@ export function CreateSitePage() {
   const loadCurrentTenant = async () => {
     try {
       if (user?.tenantId) {
+        console.log('Fetching tenant data for ID:', user.tenantId);
         const data = await tenantsApi.getById(user.tenantId);
+        console.log('Received tenant data:', data);
         setCurrentTenant(data);
       }
     } catch (err) {
@@ -145,6 +151,7 @@ export function CreateSitePage() {
               />
               <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
                 .{selectedTenant?.domain || currentTenant?.domain || 'pm-iwt.de'}
+                {/* Debug: ST={selectedTenant?.domain} CT={currentTenant?.domain} */}
               </span>
             </div>
             {errors.subdomain && (
