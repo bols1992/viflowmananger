@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { logger } from '../logger.js';
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import * as path from 'path';
 
 const execAsync = promisify(exec);
@@ -429,8 +430,7 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
     // Try to check if certificates exist (synchronously for config generation)
     let hasSsl = false;
     try {
-      const fs = require('fs');
-      hasSsl = fs.existsSync(sslCertPath) && fs.existsSync(sslKeyPath);
+      hasSsl = fsSync.existsSync(sslCertPath) && fsSync.existsSync(sslKeyPath);
       logger.info({ domain, sslCertPath, sslKeyPath, hasSsl }, 'Checking for existing SSL certificates');
     } catch (err) {
       logger.warn({ domain, error: err }, 'Error checking SSL certificates');
