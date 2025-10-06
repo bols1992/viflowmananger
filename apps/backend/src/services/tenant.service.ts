@@ -48,6 +48,9 @@ export class TenantService {
             containerStatus: true,
           },
         },
+        _count: {
+          select: { sites: true },
+        },
       },
     });
 

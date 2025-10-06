@@ -8,6 +8,7 @@ import { CreateSitePage } from './pages/CreateSitePage';
 import { SiteDetailPage } from './pages/SiteDetailPage';
 import { DeploymentLogPage } from './pages/DeploymentLogPage';
 import { TenantsPage } from './pages/TenantsPage';
+import { TenantDetailPage } from './pages/TenantDetailPage';
 
 function App() {
   return (
@@ -58,6 +59,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <TenantsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/tenants/:id"
+            element={
+              <ProtectedRoute>
+                <TenantDetailPage />
               </ProtectedRoute>
             }
           />
