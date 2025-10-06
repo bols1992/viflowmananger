@@ -666,7 +666,7 @@ server {
   /**
    * Complete cleanup of a site's Docker resources
    */
-  static async cleanup(siteId: string, domain: string, deleteUploadDir = true): Promise<void> {
+  static async cleanup(siteId: string, domain: string, deleteUploadDir = true, deleteCertificate = true): Promise<void> {
     const viflowContainerName = `viflow-app-${siteId}`;
     const authContainerName = `viflow-auth-${siteId}`;
     const networkName = `viflow-net-${siteId}`;
@@ -723,11 +723,13 @@ server {
       logger.warn(`Failed to remove Nginx config: ${error.message}`);
     }
 
-    // Remove SSL certificate
-    try {
-      await this.removeCertificate(domain);
-    } catch (error: any) {
-      logger.warn(`Failed to remove certificate: ${error.message}`);
+    // Remove SSL certificate (only if deleteCertificate is true)
+    if (deleteCertificate) {
+      try {
+        await this.removeCertificate(domain);
+      } catch (error: any) {
+        logger.warn(`Failed to remove certificate: ${error.message}`);
+      }
     }
 
     // Remove uploaded files only if requested

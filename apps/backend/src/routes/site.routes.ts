@@ -289,7 +289,7 @@ router.post(
       if (site.containerName) {
         logger.info({ siteId }, 'Cleaning up old container...');
         await appendLog(deployment.id, 'Cleaning up old container...\n');
-        await DockerService.cleanup(siteId, site.domain, false); // Don't delete upload dir
+        await DockerService.cleanup(siteId, site.domain, false, false); // Don't delete upload dir or certificate
       }
 
       // Build Docker image
