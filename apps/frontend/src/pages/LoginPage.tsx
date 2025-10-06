@@ -124,7 +124,7 @@ export function LoginPage() {
                     placeholder="admin"
                   />
                 </div>
-                {errors.username && (
+                {'username' in errors && errors.username && (
                   <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.username.message}</p>
                 )}
               </div>
@@ -145,7 +145,7 @@ export function LoginPage() {
                     placeholder="mail@example.com"
                   />
                 </div>
-                {errors.email && (
+                {'email' in errors && errors.email && (
                   <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
                 )}
               </div>
