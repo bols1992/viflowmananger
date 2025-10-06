@@ -27,6 +27,7 @@ export function CreateSitePage() {
   const [error, setError] = useState('');
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
 
   const {
     register,
@@ -37,9 +38,11 @@ export function CreateSitePage() {
   });
 
   useEffect(() => {
-    // Load tenants if admin
     if (user?.role === 'ADMIN') {
       loadTenants();
+    } else if (user?.role === 'TENANT' && user.tenantId) {
+      // Load current tenant's data to get domain
+      loadCurrentTenant();
     }
   }, [user]);
 
@@ -49,6 +52,17 @@ export function CreateSitePage() {
       setTenants(data.filter(t => t.active));
     } catch (err) {
       console.error('Failed to load tenants', err);
+    }
+  };
+
+  const loadCurrentTenant = async () => {
+    try {
+      if (user?.tenantId) {
+        const data = await tenantsApi.getById(user.tenantId);
+        setCurrentTenant(data);
+      }
+    } catch (err) {
+      console.error('Failed to load current tenant', err);
     }
   };
 
@@ -130,7 +144,7 @@ export function CreateSitePage() {
                 placeholder="meine-seite"
               />
               <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
-                .{selectedTenant?.domain || user?.tenantName || 'pm-iwt.de'}
+                .{selectedTenant?.domain || currentTenant?.domain || 'pm-iwt.de'}
               </span>
             </div>
             {errors.subdomain && (
