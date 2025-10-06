@@ -255,7 +255,15 @@ router.post(
         const appSettingsContent = await fs.readFile(appSettingsPath, 'utf-8');
         const appSettings = JSON.parse(appSettingsContent);
 
-        // Set SkipAuthentication to true
+        // Set SkipAuthentication to true in both locations
+        // ViFlow reads from StartupSettings.SkipAuthentication
+        if (appSettings.StartupSettings) {
+          appSettings.StartupSettings.SkipAuthentication = true;
+        } else {
+          appSettings.StartupSettings = { SkipAuthentication: true };
+        }
+
+        // Also set it in ViFlow section for compatibility
         if (appSettings.ViFlow) {
           appSettings.ViFlow.SkipAuthentication = true;
         } else {
