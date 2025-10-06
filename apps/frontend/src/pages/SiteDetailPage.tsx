@@ -286,20 +286,18 @@ export function SiteDetailPage() {
           )}
         </div>
 
-        {isAdmin && (
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-red-300 dark:border-red-700">
-            <h2 className="text-xl font-semibold mb-4 text-red-600 dark:text-red-400">⚠️ Gefahrenzone</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Das Löschen dieser Seite ist permanent und kann nicht rückgängig gemacht werden.
-            </p>
-            <button
-              onClick={handleDelete}
-              className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-semibold"
-            >
-              Seite löschen
-            </button>
-          </div>
-        )}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-red-300 dark:border-red-700">
+          <h2 className="text-xl font-semibold mb-4 text-red-600 dark:text-red-400">⚠️ Gefahrenzone</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Das Löschen dieser Seite ist permanent und kann nicht rückgängig gemacht werden.
+          </p>
+          <button
+            onClick={handleDelete}
+            className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 font-semibold"
+          >
+            Seite löschen
+          </button>
+        </div>
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 space-y-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">

@@ -530,7 +530,7 @@ router.delete('/:id/logo', authenticate, async (req, res, next) => {
  * DELETE /api/sites/:id
  * Delete site and cleanup all resources
  */
-router.delete('/:id', authenticate, requireAdmin, async (req, res, next) => {
+router.delete('/:id', authenticate, async (req, res, next) => {
   try {
     const siteId = req.params.id;
     const site = await prisma.site.findUnique({ where: { id: siteId } });
