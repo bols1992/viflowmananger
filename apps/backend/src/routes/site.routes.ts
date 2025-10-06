@@ -205,12 +205,49 @@ router.post(
 
       // Extract ZIP
       logger.info({ siteId }, 'Extracting ZIP file...');
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: 'Extracting ZIP file...\n' },
+      });
       const zip = new AdmZip(req.file.path);
       zip.extractAllTo(extractPath, true);
 
+      // Find ViFlow DLL
+      logger.info({ siteId }, 'Searching for ViFlow application...');
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: 'Searching for ViFlow application...\n' } },
+      });
+      const dllPath = await DockerService.findViFlowDll(extractPath);
+
+      if (!dllPath) {
+        throw new AppError(400, 'Kein ViFlow Export erkannt. Die Datei "ViCon.ViFlow.WebModel.Server.dll" wurde nicht gefunden.');
+      }
+
+      logger.info({ siteId, dllPath }, 'ViFlow application found');
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: `ViFlow application found at: ${dllPath}\n` } },
+      });
+
+      // Calculate relative path from extractPath to dllPath
+      const dllSubPath = dllPath === extractPath ? undefined : path.relative(extractPath, dllPath);
+      if (dllSubPath) {
+        logger.info({ siteId, dllSubPath }, 'DLL found in subdirectory');
+      }
+
       // Modify appsettings.json to enable SkipAuthentication
       logger.info({ siteId }, 'Configuring appsettings.json...');
-      const appSettingsPath = path.join(extractPath, 'appsettings.json');
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: 'Configuring appsettings.json...\n' } },
+      });
+
+      // Try to find appsettings.json in the same directory as the DLL
+      const appSettingsPath = dllSubPath
+        ? path.join(extractPath, dllSubPath, 'appsettings.json')
+        : path.join(extractPath, 'appsettings.json');
+
       try {
         const appSettingsContent = await fs.readFile(appSettingsPath, 'utf-8');
         const appSettings = JSON.parse(appSettingsContent);
@@ -223,47 +260,67 @@ router.post(
         }
 
         await fs.writeFile(appSettingsPath, JSON.stringify(appSettings, null, 2), 'utf-8');
-        logger.info({ siteId }, 'SkipAuthentication enabled in appsettings.json');
+        logger.info({ siteId, appSettingsPath }, 'SkipAuthentication enabled in appsettings.json');
+        await prisma.deployment.update({
+          where: { id: deployment.id },
+          data: { logs: { push: `SkipAuthentication enabled in appsettings.json at: ${appSettingsPath}\n` } },
+        });
       } catch (err) {
-        logger.warn({ siteId, error: err }, 'Could not modify appsettings.json - file may not exist or be invalid JSON');
-      }
-
-      // Find ViFlow DLL
-      logger.info({ siteId }, 'Searching for ViFlow application...');
-      const dllPath = await DockerService.findViFlowDll(extractPath);
-
-      if (!dllPath) {
-        throw new AppError(400, 'Kein ViFlow Export erkannt. Die Datei "ViCon.ViFlow.WebModel.Server.dll" wurde nicht gefunden.');
-      }
-
-      logger.info({ siteId, dllPath }, 'ViFlow application found');
-
-      // Calculate relative path from extractPath to dllPath
-      const dllSubPath = dllPath === extractPath ? undefined : path.relative(extractPath, dllPath);
-      if (dllSubPath) {
-        logger.info({ siteId, dllSubPath }, 'DLL found in subdirectory');
+        logger.warn({ siteId, appSettingsPath, error: err }, 'Could not modify appsettings.json');
+        await prisma.deployment.update({
+          where: { id: deployment.id },
+          data: { logs: { push: `Warning: Could not modify appsettings.json (file may not exist)\n` } },
+        });
       }
 
       // Detect ViFlow version
       logger.info({ siteId }, 'Detecting ViFlow version...');
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: 'Detecting ViFlow version...\n' } },
+      });
       const viflowVersion = await DockerService.detectViFlowVersion(dllPath);
       logger.info({ siteId, viflowVersion }, 'ViFlow version detected');
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: `ViFlow version detected: ${viflowVersion} (.NET ${viflowVersion === '7' ? '3.1' : viflowVersion === '8' ? '6' : '8'})\n` } },
+      });
 
       // Clean up old container and image if exists
       if (site.containerName) {
         logger.info({ siteId }, 'Cleaning up old container...');
+        await prisma.deployment.update({
+          where: { id: deployment.id },
+          data: { logs: { push: 'Cleaning up old container...\n' } },
+        });
         await DockerService.cleanup(siteId, site.domain, false); // Don't delete upload dir
       }
 
       // Build Docker image
       logger.info({ siteId }, 'Building Docker image...');
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: 'Building Docker image...\n' } },
+      });
       const imageName = await DockerService.buildImage(siteId, extractPath, viflowVersion, dllSubPath);
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: `Docker image built: ${imageName}\n` } },
+      });
 
       // Get available port
       const port = await DockerService.getAvailablePort();
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: `Assigned port: ${port}\n` } },
+      });
 
       // Start containers (ViFlow + Auth Proxy)
       logger.info({ siteId, port }, 'Starting Docker containers...');
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: 'Starting Docker containers...\n' } },
+      });
       const authPassword = site.basicAuthEnabled ? site.basicAuthPassword : undefined;
       const containerName = await DockerService.startContainer(
         siteId,
@@ -272,10 +329,22 @@ router.post(
         site.name,
         authPassword
       );
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: `Containers started: ${containerName}\n` } },
+      });
 
       // Update Nginx config (now just proxies to auth container, no basic auth needed)
       logger.info({ siteId, domain: site.domain, port }, 'Updating Nginx configuration...');
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: `Updating Nginx configuration for ${site.domain}...\n` } },
+      });
       await DockerService.updateNginxConfig(site.domain, port);
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: { logs: { push: `Nginx configuration updated\n` } },
+      });
 
       // Update site in database
       await prisma.site.update({
@@ -294,6 +363,7 @@ router.post(
         data: {
           status: 'SUCCESS',
           message: `Container deployed on port ${port}`,
+          logs: { push: `\n✅ Deployment successful!\nURL: http://${site.domain}\nPort: ${port}\nContainer: ${containerName}\n` },
           finishedAt: new Date(),
         },
       });
@@ -328,11 +398,14 @@ router.post(
 
       // Update deployment record as FAILED
       if (deployment) {
+        const errorMessage = error instanceof Error ? error.message : 'Deployment failed';
+        const errorStack = error instanceof Error ? error.stack : '';
         await prisma.deployment.update({
           where: { id: deployment.id },
           data: {
             status: 'FAILED',
-            message: error instanceof Error ? error.message : 'Deployment failed',
+            message: errorMessage,
+            logs: { push: `\n❌ Deployment failed!\nError: ${errorMessage}\n${errorStack ? `\nStack trace:\n${errorStack}\n` : ''}` },
             finishedAt: new Date(),
           },
         }).catch(() => {});
