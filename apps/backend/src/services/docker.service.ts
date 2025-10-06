@@ -431,7 +431,9 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
     try {
       const fs = require('fs');
       hasSsl = fs.existsSync(sslCertPath) && fs.existsSync(sslKeyPath);
+      logger.info({ domain, sslCertPath, sslKeyPath, hasSsl }, 'Checking for existing SSL certificates');
     } catch (err) {
+      logger.warn({ domain, error: err }, 'Error checking SSL certificates');
       hasSsl = false;
     }
 
@@ -529,31 +531,48 @@ server {
 
       logger.info('Nginx configuration updated successfully');
 
-      // Wait a moment for Nginx to fully reload and start serving the domain
-      logger.info('Waiting for Nginx to be ready...');
-      await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
+      // Check if SSL certificates already exist
+      const sslCertPath = `/etc/letsencrypt/live/${domain}/fullchain.pem`;
+      const sslKeyPath = `/etc/letsencrypt/live/${domain}/privkey.pem`;
+      let sslExists = false;
 
-      // Request SSL certificate with certbot (optional)
-      logger.info(`Requesting SSL certificate for ${domain}...`);
       try {
-        // Run certbot with sudo (requires NOPASSWD in sudoers for certbot)
-        const certbotCmd = `sudo /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
+        await fs.access(sslCertPath);
+        await fs.access(sslKeyPath);
+        sslExists = true;
+        logger.info(`SSL certificates already exist for ${domain}, skipping certbot`);
+      } catch {
+        sslExists = false;
+      }
 
-        logger.info(`Executing certbot command: ${certbotCmd}`);
+      // Only run certbot if certificates don't exist
+      if (!sslExists) {
+        // Wait a moment for Nginx to fully reload and start serving the domain
+        logger.info('Waiting for Nginx to be ready...');
+        await new Promise(resolve => setTimeout(resolve, 3000)); // 3 second delay
 
-        const { stdout, stderr } = await execAsync(certbotCmd, {
-          timeout: 90000, // 90 second timeout
-        });
+        // Request SSL certificate with certbot (optional)
+        logger.info(`Requesting SSL certificate for ${domain}...`);
+        try {
+          // Run certbot with sudo (requires NOPASSWD in sudoers for certbot)
+          const certbotCmd = `sudo /usr/bin/certbot --nginx -d ${domain} --non-interactive --agree-tos --email admin@pm-iwt.de --redirect`;
 
-        logger.info(`Certbot stdout: ${stdout || '(empty)'}`);
-        if (stderr) logger.info(`Certbot stderr: ${stderr}`);
+          logger.info(`Executing certbot command: ${certbotCmd}`);
 
-        logger.info(`SSL certificate obtained for ${domain}`);
-      } catch (certError: any) {
-        logger.error(`Certbot failed with error: ${certError.message}`);
-        logger.warn('The site will work over HTTP. To enable HTTPS, run certbot manually:');
-        logger.warn(`  sudo certbot --nginx -d ${domain}`);
-        // Don't throw - nginx config is still valid without SSL
+          const { stdout, stderr } = await execAsync(certbotCmd, {
+            timeout: 90000, // 90 second timeout
+          });
+
+          logger.info(`Certbot stdout: ${stdout || '(empty)'}`);
+          if (stderr) logger.info(`Certbot stderr: ${stderr}`);
+
+          logger.info(`SSL certificate obtained for ${domain}`);
+        } catch (certError: any) {
+          logger.error(`Certbot failed with error: ${certError.message}`);
+          logger.warn('The site will work over HTTP. To enable HTTPS, run certbot manually:');
+          logger.warn(`  sudo certbot --nginx -d ${domain}`);
+          // Don't throw - nginx config is still valid without SSL
+        }
       }
 
     } catch (error: any) {
