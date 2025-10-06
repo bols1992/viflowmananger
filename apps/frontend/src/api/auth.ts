@@ -6,6 +6,7 @@ export interface User {
   role: string;
   tenantId?: string;
   tenantName?: string;
+  tenantDomain?: string;
 }
 
 export interface LoginRequest {

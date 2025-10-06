@@ -82,22 +82,32 @@ router.get('/me', authenticate, async (req, res, next) => {
   try {
     const user = req.user!;
 
-    // If user is a tenant, fetch tenant name from database
+    // If user is a tenant, fetch tenant name and domain from database
     if (user.role === 'TENANT' && user.tenantId) {
       const { prisma } = await import('../db.js');
       const tenant = await prisma.tenant.findUnique({
         where: { id: user.tenantId },
-        select: { name: true },
+        select: { name: true, domain: true },
       });
 
       res.json({
         user: {
-          ...user,
+          userId: user.userId,
+          username: user.username,
+          role: user.role,
+          tenantId: user.tenantId,
           tenantName: tenant?.name,
+          tenantDomain: tenant?.domain,
         },
       });
     } else {
-      res.json({ user });
+      res.json({
+        user: {
+          userId: user.userId,
+          username: user.username,
+          role: user.role,
+        }
+      });
     }
   } catch (error) {
     next(error);

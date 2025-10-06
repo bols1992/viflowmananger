@@ -27,7 +27,6 @@ export function CreateSitePage() {
   const [error, setError] = useState('');
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
-  const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
 
   const {
     register,
@@ -38,15 +37,8 @@ export function CreateSitePage() {
   });
 
   useEffect(() => {
-    console.log('CreateSitePage - User:', user);
     if (user?.role === 'ADMIN') {
       loadTenants();
-    } else if (user?.role === 'TENANT' && user.tenantId) {
-      // Load current tenant's data to get domain
-      console.log('Loading tenant data for tenantId:', user.tenantId);
-      loadCurrentTenant();
-    } else {
-      console.log('User is tenant but no tenantId:', user);
     }
   }, [user]);
 
@@ -56,19 +48,6 @@ export function CreateSitePage() {
       setTenants(data.filter(t => t.active));
     } catch (err) {
       console.error('Failed to load tenants', err);
-    }
-  };
-
-  const loadCurrentTenant = async () => {
-    try {
-      if (user?.tenantId) {
-        console.log('Fetching tenant data for ID:', user.tenantId);
-        const data = await tenantsApi.getById(user.tenantId);
-        console.log('Received tenant data:', data);
-        setCurrentTenant(data);
-      }
-    } catch (err) {
-      console.error('Failed to load current tenant', err);
     }
   };
 
@@ -150,8 +129,7 @@ export function CreateSitePage() {
                 placeholder="meine-seite"
               />
               <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
-                .{selectedTenant?.domain || currentTenant?.domain || 'pm-iwt.de'}
-                {/* Debug: ST={selectedTenant?.domain} CT={currentTenant?.domain} */}
+                .{selectedTenant?.domain || user?.tenantDomain || 'pm-iwt.de'}
               </span>
             </div>
             {errors.subdomain && (
