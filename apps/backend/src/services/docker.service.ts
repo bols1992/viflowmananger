@@ -2,7 +2,6 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { logger } from '../logger.js';
 import * as fs from 'fs/promises';
-import { existsSync } from 'fs';
 import * as path from 'path';
 
 const execAsync = promisify(exec);
@@ -497,12 +496,14 @@ server {
       const sslCertPath = `/etc/letsencrypt/live/${domain}/fullchain.pem`;
       const sslKeyPath = `/etc/letsencrypt/live/${domain}/privkey.pem`;
 
-      // Use synchronous existsSync - works even without read permission
-      const sslExists = existsSync(sslCertPath) && existsSync(sslKeyPath);
-
-      if (sslExists) {
+      // Check using ls command with sudo (since files are owned by root)
+      let sslExists = false;
+      try {
+        await execAsync(`sudo ls ${sslCertPath} ${sslKeyPath} > /dev/null 2>&1`);
+        sslExists = true;
         logger.info({ domain, sslCertPath, sslKeyPath }, 'SSL certificates found, will use HTTPS config');
-      } else {
+      } catch {
+        sslExists = false;
         logger.info({ domain, sslCertPath, sslKeyPath }, 'No SSL certificates found, will use HTTP config');
       }
 
