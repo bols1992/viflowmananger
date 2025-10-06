@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { api } from './client';
 
 export interface Tenant {
   id: string;
@@ -36,26 +36,26 @@ export interface UpdateTenantDto {
 
 export const tenantsApi = {
   async getAll(): Promise<Tenant[]> {
-    const response = await apiClient.get('/tenants');
+    const response = await api.get('/tenants');
     return response.data;
   },
 
   async getById(id: string): Promise<Tenant> {
-    const response = await apiClient.get(`/tenants/${id}`);
+    const response = await api.get(`/tenants/${id}`);
     return response.data;
   },
 
   async create(data: CreateTenantDto): Promise<Tenant> {
-    const response = await apiClient.post('/tenants', data);
+    const response = await api.post('/tenants', data);
     return response.data;
   },
 
   async update(id: string, data: UpdateTenantDto): Promise<Tenant> {
-    const response = await apiClient.put(`/tenants/${id}`, data);
+    const response = await api.put(`/tenants/${id}`, data);
     return response.data;
   },
 
   async delete(id: string): Promise<void> {
-    await apiClient.delete(`/tenants/${id}`);
+    await api.delete(`/tenants/${id}`);
   },
 };
