@@ -155,7 +155,6 @@ router.post('/', authenticate, async (req, res, next) => {
 router.post(
   '/:id/upload',
   authenticate,
-  requireAdmin,
   upload.single('file'),
   async (req, res, next) => {
     let extractPath: string | null = null;
@@ -382,7 +381,7 @@ router.post('/:id/deploy', authenticate, requireAdmin, async (req, res, next) =>
  * POST /api/sites/:id/start
  * Start container
  */
-router.post('/:id/start', authenticate, requireAdmin, async (req, res, next) => {
+router.post('/:id/start', authenticate, async (req, res, next) => {
   try {
     const siteId = req.params.id;
     const site = await siteService.getSiteById(siteId);
@@ -410,7 +409,7 @@ router.post('/:id/start', authenticate, requireAdmin, async (req, res, next) => 
  * POST /api/sites/:id/stop
  * Stop container
  */
-router.post('/:id/stop', authenticate, requireAdmin, async (req, res, next) => {
+router.post('/:id/stop', authenticate, async (req, res, next) => {
   try {
     const siteId = req.params.id;
     const site = await siteService.getSiteById(siteId);
@@ -441,7 +440,6 @@ router.post('/:id/stop', authenticate, requireAdmin, async (req, res, next) => {
 router.post(
   '/:id/logo',
   authenticate,
-  requireAdmin,
   logoUpload.single('logo'),
   async (req, res, next) => {
     try {
@@ -481,7 +479,7 @@ router.post(
  * DELETE /api/sites/:id/logo
  * Delete custom logo for site
  */
-router.delete('/:id/logo', authenticate, requireAdmin, async (req, res, next) => {
+router.delete('/:id/logo', authenticate, async (req, res, next) => {
   try {
     const siteId = req.params.id;
     const site = await siteService.getSiteById(siteId);
