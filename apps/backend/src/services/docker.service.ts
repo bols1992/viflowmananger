@@ -422,20 +422,9 @@ ENTRYPOINT ["dotnet", "ViCon.ViFlow.WebModel.Server.dll"]
   /**
    * Generate Nginx configuration for a site
    */
-  static generateNginxConfig(domain: string, port: number): string {
-    // Check if SSL certificates exist for this domain
+  static generateNginxConfig(domain: string, port: number, hasSsl: boolean = false): string {
     const sslCertPath = `/etc/letsencrypt/live/${domain}/fullchain.pem`;
     const sslKeyPath = `/etc/letsencrypt/live/${domain}/privkey.pem`;
-
-    // Try to check if certificates exist (synchronously for config generation)
-    let hasSsl = false;
-    try {
-      hasSsl = fsSync.existsSync(sslCertPath) && fsSync.existsSync(sslKeyPath);
-      logger.info({ domain, sslCertPath, sslKeyPath, hasSsl }, 'Checking for existing SSL certificates');
-    } catch (err) {
-      logger.warn({ domain, error: err }, 'Error checking SSL certificates');
-      hasSsl = false;
-    }
 
     if (hasSsl) {
       // Generate config with existing SSL certificates
@@ -504,12 +493,27 @@ server {
     port: number
   ): Promise<void> {
     try {
+      // Check if SSL certificates already exist first (using sudo since files are owned by root)
+      const sslCertPath = `/etc/letsencrypt/live/${domain}/fullchain.pem`;
+      const sslKeyPath = `/etc/letsencrypt/live/${domain}/privkey.pem`;
+      let sslExists = false;
+
+      try {
+        // Use sudo test -f to check if files exist (works even if node process can't read them)
+        await execAsync(`sudo test -f ${sslCertPath} && sudo test -f ${sslKeyPath}`);
+        sslExists = true;
+        logger.info(`SSL certificates already exist for ${domain}, will use HTTPS config`);
+      } catch {
+        sslExists = false;
+        logger.info(`No existing SSL certificates found for ${domain}, will use HTTP config`);
+      }
+
       const configPath = path.join(
         this.NGINX_SITES_DIR,
         `viflow-${domain}.conf`
       );
 
-      const config = this.generateNginxConfig(domain, port);
+      const config = this.generateNginxConfig(domain, port, sslExists);
 
       logger.info(`Writing Nginx config to ${configPath}...`);
 
@@ -531,21 +535,7 @@ server {
 
       logger.info('Nginx configuration updated successfully');
 
-      // Check if SSL certificates already exist
-      const sslCertPath = `/etc/letsencrypt/live/${domain}/fullchain.pem`;
-      const sslKeyPath = `/etc/letsencrypt/live/${domain}/privkey.pem`;
-      let sslExists = false;
-
-      try {
-        await fs.access(sslCertPath);
-        await fs.access(sslKeyPath);
-        sslExists = true;
-        logger.info(`SSL certificates already exist for ${domain}, skipping certbot`);
-      } catch {
-        sslExists = false;
-      }
-
-      // Only run certbot if certificates don't exist
+      // Only run certbot if certificates don't exist (already checked above)
       if (!sslExists) {
         // Wait a moment for Nginx to fully reload and start serving the domain
         logger.info('Waiting for Nginx to be ready...');
