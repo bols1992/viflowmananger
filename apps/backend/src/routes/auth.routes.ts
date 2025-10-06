@@ -78,8 +78,30 @@ router.post('/logout', (_req, res) => {
  * GET /api/auth/me
  * Get current authenticated user
  */
-router.get('/me', authenticate, (req, res) => {
-  res.json({ user: req.user });
+router.get('/me', authenticate, async (req, res, next) => {
+  try {
+    const user = req.user!;
+
+    // If user is a tenant, fetch tenant name from database
+    if (user.role === 'TENANT' && user.tenantId) {
+      const { prisma } = await import('../db.js');
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: user.tenantId },
+        select: { name: true },
+      });
+
+      res.json({
+        user: {
+          ...user,
+          tenantName: tenant?.name,
+        },
+      });
+    } else {
+      res.json({ user });
+    }
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
